@@ -81,7 +81,7 @@ public class PeerNode {
         System.out.println("Client Part of Peer :: Peer disconnects from tracker successfully");
     }
 
-    public void register()
+    public boolean register()
     {
         String request = "Register" + "," + userName + "," + userPass;
         String answerMessage = "";
@@ -93,6 +93,7 @@ public class PeerNode {
         } catch (IOException e) {
             System.out.println("An I/O error occurs when using the output stream for register request");
             e.printStackTrace();
+            return false;
         }
 
         try {
@@ -107,21 +108,24 @@ public class PeerNode {
             else if(answerMessage.equals("Fail"))
             {
                 System.out.println("Client Part of Peer :: Receive answer from server and register request contains an existing user name");
-                setUserName(askPeerInput("Enter username"));
-                register();
+                return false;
             }
             else
             {
                 System.out.println("Client Part of Peer :: Receive unknown answer for register request -> " + answerMessage);
+                return false;
             }
 
         } catch (IOException e) {
             System.out.println("An I/O error occurs when using the input stream for receiving answer of register request");
             e.printStackTrace();
+            return false;
         } catch (ClassNotFoundException e) {
             System.out.println("An 'ClassNotFoundException' error occurs when using the input stream for receiving answer of register request");
             e.printStackTrace();
+            return false;
         }
+        return true;
     }
 
     public String askPeerInput(String screenMessage)

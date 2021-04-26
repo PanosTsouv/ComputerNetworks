@@ -1,18 +1,16 @@
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-
 public class FileIO{
     
-    public static List<String> readPeerFiles(){
+    public static String readPeerFiles(){
         File folder = new File("Project/peer1/shared_directory");
         File[] listOfFiles = folder.listFiles();
-        ArrayList<String> fileNames = new ArrayList<>();
+        String fileNames = "";
         for (File file : listOfFiles) {
             if (file.isFile()) {
-                fileNames.add(file.getName());
+                fileNames = fileNames + file.getName().replace(".txt","") + ",";
             }
         }
+        fileNames = fileNames.substring(0,fileNames.length() - 1);
         return fileNames;
     }
 }

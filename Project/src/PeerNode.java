@@ -156,7 +156,7 @@ public class PeerNode {
         {
             System.out.println("Client Part of Peer :: Receive a token id from server -> " + answerMessage);
             tokenId = answerMessage;
-            sendPeerIpAndPort();
+            inform();
             return true;
         }
     }
@@ -173,15 +173,15 @@ public class PeerNode {
         }
     }
 
-    public void sendPeerIpAndPort(){
-        String request = "192.168.1.5," + peerServerPort;
+    public void inform(){
+        String inform = "192.168.1.5" + "," + peerServerPort + "," + FileIO.readPeerFiles();
         try {
-            out.writeObject(request);
-            System.out.println("Client Part of Peer :: Initialize a stream with this request -> " + request);
+            out.writeObject(inform);
+            System.out.println("Client Part of Peer :: Initialize a stream with this information -> " + inform);
             out.flush();
-            System.out.println("Client Part of Peer :: Request '" + request + "' is sent successfully");
+            System.out.println("Client Part of Peer :: Information '" + inform + "' is sent successfully");
         } catch (IOException e) {
-            System.out.println("An I/O error occurs when using the output stream for sending ip and port");
+            System.out.println("An I/O error occurs when using the output stream for sending information");
             e.printStackTrace();
         }
     }

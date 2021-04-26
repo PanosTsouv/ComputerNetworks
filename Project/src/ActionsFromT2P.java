@@ -59,10 +59,27 @@ public class ActionsFromT2P extends Thread{
             }else if(splitRequest[0].equals("Login")){
                 System.out.println("Tracker receive a login request and start handling it.....");
                 logInHandler(splitRequest);
+            }else if(splitRequest[0].equals("Logout"))
+            {
+                System.out.println("Tracker receive a logout request and start handling it.....");
+                logOutHandler(splitRequest);
             }
         }while(!splitRequest[0].equals("Logout"));
     }
 
+    public void logOutHandler(String[] splitRequest){
+        synchronized(onlineUsers){
+            onlineUsers.remove(splitRequest[1]);
+        }
+        try {
+            out.writeObject("Success");
+            out.flush();
+            System.out.println("Tracker answer that peer's logout request is handled susccessfully");
+        } catch (IOException e) {
+            System.out.println("An I/O error occurs while tracker tries to send a positive answer for logout request");
+            e.printStackTrace();
+        }
+    }
 
     public void registerhandler(String[] splitRequest)
     {
@@ -85,7 +102,7 @@ public class ActionsFromT2P extends Thread{
             try {
                 out.writeObject("Success");
                 out.flush();
-                System.out.println("Tracker answer that peer's request is handled susccessfully");
+                System.out.println("Tracker answer that peer's register request is handled susccessfully");
             } catch (IOException e) {
                 System.out.println("An I/O error occurs while tracker tries to send a positive answer for register request");
                 e.printStackTrace();

@@ -69,7 +69,15 @@ public class PeerMain {
             }
             else if(choice.equals("7"))
             {
-                //TO DO
+                if(loginFlag == false)
+                {
+                    System.out.println("You can not logout withot login first");
+                    continue;
+                }
+                if(myPeer.request("Logout"))
+                {
+                    loginFlag = false;
+                }
             }
         }
     }

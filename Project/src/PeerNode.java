@@ -17,6 +17,7 @@ public class PeerNode {
 
     private String userName = "";
     private String userPass = "";
+    private String tokenId = "";
 
     
     public PeerNode(int peerServerPort, int trackerPort, String trackerIP, String userName, String userPass)
@@ -83,27 +84,34 @@ public class PeerNode {
 
     public boolean request(String mode)
     {
-        String request = mode + "," + userName + "," + userPass;
-        String answerMessage = "";
-        try {
-            out.writeObject(request);
-            System.out.println("Client Part of Peer :: Initialize a stream with this request -> " + request);
-            out.flush();
-            System.out.println("Client Part of Peer :: Request '" + request + "' is sent successfully");
-        } catch (IOException e) {
-            System.out.println("An I/O error occurs when using the output stream for " + mode + " request");
-            e.printStackTrace();
-            return false;
-        }
+            String request = mode + "," + userName + "," + userPass;
+            if(mode.equals("Logout"))
+            {
+                request = mode + "," + this.tokenId;
+            }
+            String answerMessage = "";
+            try {
+                out.writeObject(request);
+                System.out.println("Client Part of Peer :: Initialize a stream with this request -> " + request);
+                out.flush();
+                System.out.println("Client Part of Peer :: Request '" + request + "' is sent successfully");
+            } catch (IOException e) {
+                System.out.println("An I/O error occurs when using the output stream for " + mode + " request");
+                e.printStackTrace();
+                return false;
+            }
 
         try {
             answerMessage = (String)in.readObject();
             System.out.println("Client Part of Peer :: Receive answer from server for " + mode + " request");
             if(mode.equals("Register")){
                 return handleRegisterResponse(answerMessage);
-            }else{
+            }else if(mode.equals("Login")){
                 return handleLoginResponse(answerMessage);
-            }    
+            }else
+            {
+                return handleLogoutResponse(answerMessage);
+            }
         } catch (IOException e) {
             System.out.println("An I/O error occurs when using the input stream for receiving answer of" + mode + " request");
             e.printStackTrace();
@@ -147,8 +155,21 @@ public class PeerNode {
         else
         {
             System.out.println("Client Part of Peer :: Receive a token id from server -> " + answerMessage);
+            tokenId = answerMessage;
             sendPeerIpAndPort();
             return true;
+        }
+    }
+
+    public boolean handleLogoutResponse(String answerMessage){
+        if(answerMessage.equals("Success"))
+        {
+            System.out.println("Client Part of Peer :: Receive answer from server and logout request was handled successfully");
+            disconnect();
+            return true;
+        }else{
+            System.out.println("Client Part of Peer :: Receive answer from server and logout request was failed");
+            return false;
         }
     }
 

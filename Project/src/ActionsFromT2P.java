@@ -205,7 +205,7 @@ public class ActionsFromT2P extends Thread{
         synchronized(onlineUsers)
         {
             onlineUsers.put(userName, onlineUserInfo);
-            System.out.println("Tracker add peer " + userName + "=" + onlineUsers.get(userName) + " to register list");
+            System.out.println("Tracker add peer " + userName + "=" + onlineUsers.get(userName) + " to online users list");
         }
     }
 }

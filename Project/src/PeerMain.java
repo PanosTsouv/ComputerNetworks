@@ -12,10 +12,6 @@ public class PeerMain {
         //     }
         // }).start();
 
-        // disconnect();
-        //         connect(trackerIP, trackerPort);
-        //         setUserName(askPeerInput("Enter username"));
-        //         register();
         boolean registerFlag = false;
         while(true)
         {
@@ -35,7 +31,7 @@ public class PeerMain {
                     myPeer.connect(myPeer.getTrackerIP(), myPeer.getTrackerPort());
                     myPeer.setUserName(myPeer.askPeerInput("Enter username").replaceAll("[ ']", ""));
                     myPeer.setUserPass(myPeer.askPeerInput("Enter password").replaceAll("[ ']", ""));
-                    registerFlag = myPeer.register();
+                    registerFlag = myPeer.request("Register");
                     myPeer.disconnect();
                 } 
             }
@@ -52,10 +48,33 @@ public class PeerMain {
                     continue;
                 }
                 myPeer.connect(myPeer.getTrackerIP(), myPeer.getTrackerPort());
+                while(loginFlag==false){
+                    myPeer.setUserName(myPeer.askPeerInput("Enter username").replaceAll("[ ']", ""));
+                    myPeer.setUserPass(myPeer.askPeerInput("Enter password").replaceAll("[ ']", ""));
+                    loginFlag = myPeer.request("Login");
+                    if(loginFlag){
+                        if(myPeer.sendPeerIpAndPort()){
+                            System.out.println("IP and port are sent successfully");
+                        }else{
+                            System.out.println("IP and port are not sent");
+                        }
+                    }
+                }
             }
             else if(choice.equals("3"))
             {
-                //TO DO
+                //TO DO LIST
+                if(registerFlag == false)
+                {
+                    System.out.println("You should register to tracker before log in");
+                    continue;
+                }
+                if(loginFlag == true)
+                {
+                    System.out.println("You have already log in to tracker");
+                    continue;
+                }
+                
             }
             else if(choice.equals("4"))
             {

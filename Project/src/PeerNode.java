@@ -81,9 +81,9 @@ public class PeerNode {
         System.out.println("Client Part of Peer :: Peer disconnects from tracker successfully");
     }
 
-    public boolean register()
+    public boolean request(String mode)
     {
-        String request = "Register" + "," + userName + "," + userPass;
+        String request = mode + "," + userName + "," + userPass;
         String answerMessage = "";
         try {
             out.writeObject(request);
@@ -91,7 +91,7 @@ public class PeerNode {
             out.flush();
             System.out.println("Client Part of Peer :: Request '" + request + "' is sent successfully");
         } catch (IOException e) {
-            System.out.println("An I/O error occurs when using the output stream for register request");
+            System.out.println("An I/O error occurs when using the output stream for " + mode + " request");
             e.printStackTrace();
             return false;
         }
@@ -99,34 +99,76 @@ public class PeerNode {
         try {
 
             answerMessage = (String)in.readObject();
-            System.out.println("Client Part of Peer :: Receive answer from server for register request");
-
-            if(answerMessage.equals("Success"))
-            {
-                System.out.println("Client Part of Peer :: Receive answer from server and register request was handled successfully");
-            }
-            else if(answerMessage.equals("Fail"))
-            {
-                System.out.println("Client Part of Peer :: Receive answer from server and register request contains an existing user name");
-                return false;
-            }
-            else
-            {
-                System.out.println("Client Part of Peer :: Receive unknown answer for register request -> " + answerMessage);
-                return false;
-            }
-
+            System.out.println("Client Part of Peer :: Receive answer from server for " + mode + " request");
+            if(mode.equals("Register")){
+                return handleRegisterResponse(answerMessage);
+            }else{
+                return handleLoginResponse(answerMessage);
+            }    
         } catch (IOException e) {
-            System.out.println("An I/O error occurs when using the input stream for receiving answer of register request");
+            System.out.println("An I/O error occurs when using the input stream for receiving answer of" + mode + " request");
             e.printStackTrace();
             return false;
         } catch (ClassNotFoundException e) {
-            System.out.println("An 'ClassNotFoundException' error occurs when using the input stream for receiving answer of register request");
+            System.out.println("An 'ClassNotFoundException' error occurs when using the input stream for receiving answer of " + mode + " request");
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean handleRegisterResponse(String answerMessage){
+        if(answerMessage.equals("Success"))
+        {
+            System.out.println("Client Part of Peer :: Receive answer from server and register request was handled successfully");
+            return true;
+        }
+        else if(answerMessage.equals("Fail"))
+        {
+            System.out.println("Client Part of Peer :: Receive answer from server and register request contains an existing user name");
+            return false;
+        }
+        else
+        {
+            System.out.println("Client Part of Peer :: Receive unknown answer for register request -> " + answerMessage);
+            return false;
+        }
+    }
+
+    public boolean handleLoginResponse(String answerMessage){
+        
+        if(answerMessage.equals("Wrong pass"))
+        {
+            System.out.println("Client Part of Peer :: Receive answer from server and login request contains wrong password");
+            return false;
+        }else if(answerMessage.equals("Wrong user"))
+        {
+            System.out.println("Client Part of Peer :: Receive answer from server and login request contains wrong user name");
+            return false;
+        }
+        else
+        {
+            System.out.println("Client Part of Peer :: Receive a token id from server -> " + answerMessage);
+            return true;
+        }
+    }
+
+    public boolean sendPeerIpAndPort(){
+        String request = "192.168.1.5," + peerServerPort;
+        try {
+            out.writeObject(request);
+            System.out.println("Client Part of Peer :: Initialize a stream with this request -> " + request);
+            out.flush();
+            System.out.println("Client Part of Peer :: Request '" + request + "' is sent successfully");
+        } catch (IOException e) {
+            System.out.println("An I/O error occurs when using the output stream for sending ip and port");
             e.printStackTrace();
             return false;
         }
         return true;
     }
+    
+
+    
 
     public String askPeerInput(String screenMessage)
     {

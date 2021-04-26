@@ -70,6 +70,7 @@ public class ActionsFromT2P extends Thread{
     public void logOutHandler(String[] splitRequest){
         synchronized(onlineUsers){
             onlineUsers.remove(splitRequest[1]);
+            System.out.println("Tracker remove peer with token " + splitRequest[1] + "=" + onlineUsers.get(splitRequest[1]) " from online peers list");
         }
         try {
             out.writeObject("Success");
@@ -175,7 +176,7 @@ public class ActionsFromT2P extends Thread{
             e.printStackTrace();
         }
 
-        updateOnlineUserList(peerIp, peerPort, userName, countDownloads, countFailures);
+        updateOnlineUserList(peerIp, peerPort, userName, countDownloads, countFailures, Integer.toString(tokenId));
     }
 
     public boolean userAuthentication(String userName, String userPass, String userPasswordInRegisterList)
@@ -210,7 +211,7 @@ public class ActionsFromT2P extends Thread{
         return true;
     }
 
-    public void updateOnlineUserList(String peerIp, String peerPort, String userName, String countDownloads, String countFailures)
+    public void updateOnlineUserList(String peerIp, String peerPort, String userName, String countDownloads, String countFailures, String tokenId)
     {
         ArrayList<String> onlineUserInfo = new ArrayList<>();
         onlineUserInfo.add(peerIp);
@@ -223,8 +224,8 @@ public class ActionsFromT2P extends Thread{
 
         synchronized(onlineUsers)
         {
-            onlineUsers.put(userName, onlineUserInfo);
-            System.out.println("Tracker add peer " + userName + "=" + onlineUsers.get(userName) + " to online users list");
+            onlineUsers.put(tokenId, onlineUserInfo);
+            System.out.println("Tracker add peer with tokenId " + tokenId + "=" + onlineUsers.get(userName) + " to online peers list");
         }
     }
 }

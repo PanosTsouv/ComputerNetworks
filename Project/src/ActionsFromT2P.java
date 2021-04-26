@@ -3,6 +3,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ActionsFromT2P extends Thread{
@@ -107,6 +108,104 @@ public class ActionsFromT2P extends Thread{
 
     public void logInHandler(String[] splitRequest)
     {
-        
+        String userName = splitRequest[1];
+        String userPass = splitRequest[2];
+        String countDownloads = "";
+        String countFailures = "";
+        String userPasswordInRegisterList = "";
+        String peerIp = "";
+        String peerPort = "";
+        ArrayList<String> userInfo;
+
+        synchronized(registerUsers)
+        {
+            userInfo = registerUsers.get(userName);
+            if(userInfo != null)
+            {
+                userPasswordInRegisterList = userInfo.get(0);
+                countDownloads = userInfo.get(1);
+                countFailures = userInfo.get(2);
+            }
+        }
+
+        if(!userAuthentication(userName, userPass, userPasswordInRegisterList))
+        {
+            return;
+        }
+
+        Random rand = new Random();
+        int tokenId = rand.nextInt(1000);
+
+        try {
+            out.writeObject(tokenId);
+            out.flush();
+            System.out.println("Tracker gives tokenId " + tokenId + " to peer with name" + userName);
+        } catch (IOException e) {
+            System.out.println("An I/O error occurs while tracker tries to send tokenID for login request");
+            e.printStackTrace();
+        }
+
+        try {
+            peerIp = (String)in.readObject();
+            peerPort = (String)in.readObject();
+            System.out.println("Tracker receive Ip-Port from peer " + userName);
+        } catch (ClassNotFoundException e) {
+            System.out.println("A ClassNotFoundException error occurs while tracker tries to receive Ip-Port from peer " + userName);
+            e.printStackTrace();
+        } catch (IOException e) {
+            System.out.println("An I/O error occurs while tracker tries to receive Ip-Port from peer " + userName);
+            e.printStackTrace();
+        }
+
+        updateOnlineUserList(peerIp, peerPort, userName, countDownloads, countFailures);
+    }
+
+    public boolean userAuthentication(String userName, String userPass, String userPasswordInRegisterList)
+    {
+        if(userPasswordInRegisterList.equals(""))
+        {
+            System.out.println("User with name " + userName + " does not exist");
+            try {
+                out.writeObject("Wrong username");
+                out.flush();
+                System.out.println("Tracker send that username " + userName + " does not exist to peer successfully");
+            } catch (IOException e) {
+                System.out.println("An I/O error occurs while tracker tries to send an error message (Wrong username) for login request");
+                e.printStackTrace();
+            } 
+            return false;
+        }
+        if(!userPass.equals(userPasswordInRegisterList))
+        {
+            System.out.println("User with name " + userName + " give wrong password");
+            try {
+                out.writeObject("Wrong password");
+                out.flush();
+                System.out.println("Tracker send that password of username " + userName + " is wrong to peer successfully");
+            } catch (IOException e) {
+                System.out.println("An I/O error occurs while tracker tries to send an error message (Wrong password) for login request");
+                e.printStackTrace();
+            } 
+            return false;
+        }
+        return true;
+    }
+
+    public void updateOnlineUserList(String peerIp, String peerPort, String userName, String countDownloads, String countFailures)
+    {
+        ArrayList<String> onlineUserInfo = new ArrayList<>();
+        onlineUserInfo.add(peerIp);
+        onlineUserInfo.add(peerPort);
+        onlineUserInfo.add(userName);
+        onlineUserInfo.add(countDownloads);
+        onlineUserInfo.add(countFailures);
+
+        System.out.println("Tracker create a list with online peer's info");
+
+        synchronized(onlineUsers)
+        {
+            onlineUsers.put(userName, onlineUserInfo);
+            System.out.println("Tracker add peer " + userName + "=" + onlineUsers.get(userName) + " to register list");
+        }
     }
 }

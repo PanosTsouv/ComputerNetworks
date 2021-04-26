@@ -97,7 +97,6 @@ public class PeerNode {
         }
 
         try {
-
             answerMessage = (String)in.readObject();
             System.out.println("Client Part of Peer :: Receive answer from server for " + mode + " request");
             if(mode.equals("Register")){
@@ -136,11 +135,11 @@ public class PeerNode {
 
     public boolean handleLoginResponse(String answerMessage){
         
-        if(answerMessage.equals("Wrong pass"))
+        if(answerMessage.equals("Wrong password"))
         {
             System.out.println("Client Part of Peer :: Receive answer from server and login request contains wrong password");
             return false;
-        }else if(answerMessage.equals("Wrong user"))
+        }else if(answerMessage.equals("Wrong username"))
         {
             System.out.println("Client Part of Peer :: Receive answer from server and login request contains wrong user name");
             return false;
@@ -148,11 +147,12 @@ public class PeerNode {
         else
         {
             System.out.println("Client Part of Peer :: Receive a token id from server -> " + answerMessage);
+            sendPeerIpAndPort();
             return true;
         }
     }
 
-    public boolean sendPeerIpAndPort(){
+    public void sendPeerIpAndPort(){
         String request = "192.168.1.5," + peerServerPort;
         try {
             out.writeObject(request);
@@ -162,14 +162,9 @@ public class PeerNode {
         } catch (IOException e) {
             System.out.println("An I/O error occurs when using the output stream for sending ip and port");
             e.printStackTrace();
-            return false;
         }
-        return true;
     }
     
-
-    
-
     public String askPeerInput(String screenMessage)
     {
         Console console = System.console();
@@ -244,15 +239,4 @@ public class PeerNode {
     {
         this.userPass = userPass;
     }
-
-
-
-
-
-
-
-
-
-
-
 }

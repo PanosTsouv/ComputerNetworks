@@ -3,8 +3,6 @@ public class PeerMain {
 
         PeerNode myPeer = new PeerNode(5002, 5000, "192.168.1.5", "", "");
 
-        
-
         // new Thread(new Runnable(){
         //     @Override
         //     public void run() {
@@ -13,10 +11,9 @@ public class PeerMain {
         // }).start();
 
         boolean registerFlag = false;
+        boolean loginFlag = false;
         while(true)
         {
-            
-            boolean loginFlag = false;
             String choice = myPeer.askPeerInput
             ("Press 1 -> Register\nPress 2 -> Login\nPress 3 -> list\nPress 4 -> details\nPress 5 -> checkActive \nPress 6 -> simpleDownload\nPress 7 -> Logout");
 
@@ -52,29 +49,11 @@ public class PeerMain {
                     myPeer.setUserName(myPeer.askPeerInput("Enter username").replaceAll("[ ']", ""));
                     myPeer.setUserPass(myPeer.askPeerInput("Enter password").replaceAll("[ ']", ""));
                     loginFlag = myPeer.request("Login");
-                    if(loginFlag){
-                        if(myPeer.sendPeerIpAndPort()){
-                            System.out.println("IP and port are sent successfully");
-                        }else{
-                            System.out.println("IP and port are not sent");
-                        }
-                    }
                 }
             }
             else if(choice.equals("3"))
             {
                 //TO DO LIST
-                if(registerFlag == false)
-                {
-                    System.out.println("You should register to tracker before log in");
-                    continue;
-                }
-                if(loginFlag == true)
-                {
-                    System.out.println("You have already log in to tracker");
-                    continue;
-                }
-                
             }
             else if(choice.equals("4"))
             {

@@ -31,7 +31,7 @@ public class ActionsFromT2P extends Thread{
 
     @Override
     public void run() {
-        System.out.println("New thread start running...");
+        System.out.println("\nNew thread start running...");
         String peerRequest = "";
         String[] splitRequest = null;
 
@@ -137,17 +137,18 @@ public class ActionsFromT2P extends Thread{
         int tokenId = rand.nextInt(1000);
 
         try {
-            out.writeObject(tokenId);
+            out.writeObject(Integer.toString(tokenId));
             out.flush();
-            System.out.println("Tracker gives tokenId " + tokenId + " to peer with name" + userName);
+            System.out.println("Tracker gives tokenId " + tokenId + " to peer with name " + userName);
         } catch (IOException e) {
             System.out.println("An I/O error occurs while tracker tries to send tokenID for login request");
             e.printStackTrace();
         }
 
         try {
-            peerIp = (String)in.readObject();
-            peerPort = (String)in.readObject();
+            String userIpPort = (String)in.readObject();
+            peerIp = userIpPort.split(",")[0];
+            peerPort = userIpPort.split(",")[1];
             System.out.println("Tracker receive Ip-Port from peer " + userName);
         } catch (ClassNotFoundException e) {
             System.out.println("A ClassNotFoundException error occurs while tracker tries to receive Ip-Port from peer " + userName);
@@ -188,6 +189,7 @@ public class ActionsFromT2P extends Thread{
             } 
             return false;
         }
+        System.out.println("Tracker send that authedication for username " + userName + " is successfully");
         return true;
     }
 

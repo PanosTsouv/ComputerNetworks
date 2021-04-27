@@ -2,6 +2,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
@@ -15,6 +16,10 @@ public class ActionsFromT2P extends Thread{
     private ArrayList<String> availableFiles;
     private ObjectInputStream in;
     private ObjectOutputStream out;
+
+    private Socket connectionT2P;
+    private ObjectInputStream inT2P;
+    private ObjectOutputStream outT2P;
     
     public ActionsFromT2P(Socket connection, ConcurrentHashMap<String, ArrayList<String>> registerUsers,
                                 ConcurrentHashMap<String, ArrayList<String>> onlineUsers, ArrayList<String> availableFiles,
@@ -72,8 +77,112 @@ public class ActionsFromT2P extends Thread{
             {
                 System.out.println("Tracker receive a list request and start handling it.....");
                 listHandler();
+            }else if(splitRequest[0].equals("Details"))
+            {
+                System.out.println("Tracker receive a list request and start handling it.....");
+                detailsHandler(splitRequest);
             }
         }while(!splitRequest[0].equals("Logout"));
+    }
+
+    public boolean connect(String connectionIp, int connectionPort, String tokenId)
+    {
+        try
+        {
+            connectionT2P = new Socket(connectionIp, connectionPort);
+            outT2P = new ObjectOutputStream(connectionT2P.getOutputStream());
+            inT2P = new ObjectInputStream(connectionT2P.getInputStream());
+            System.out.println("Client Part of tracker :: Tracker is successfully connected with server part of peer with IP: " + connectionIp + " Port: " + connectionPort + " TokenId: " + tokenId);
+            return true;
+        } 
+        catch(UnknownHostException unknownHost) 
+        {
+            System.err.println("You are trying to connect to an unknown host!");
+            return false;
+        } 
+        catch (IOException ioException) 
+        {
+            System.err.println("You are trying to connect to an offline server.Check the server IP and port");
+            return false;
+        }
+    }
+
+    public void detailsHandler(String[] splitRequest)
+    {
+        String currentPeerIP = "";
+        String currentPeerPort = "";
+
+        String requestFileName = splitRequest[1];
+        ArrayList<String> tempUsersWithFile = new ArrayList<>();
+        synchronized(availableFilesWithPeers)
+        {
+            tempUsersWithFile.addAll(availableFilesWithPeers.get(requestFileName));
+        }
+        for(String peerTokenId : tempUsersWithFile)
+        {
+            synchronized(onlineUsers)
+            {
+                if(onlineUsers.get(peerTokenId) != null)
+                {
+                    currentPeerIP = onlineUsers.get(peerTokenId).get(0);
+                    currentPeerPort = onlineUsers.get(peerTokenId).get(1);
+                    if(connect(currentPeerIP, Integer.parseInt(currentPeerPort), peerTokenId))
+                    {
+                        try {
+                            outT2P.writeObject("Tracker");
+                            System.out.println("Client part of tracker :: initialize a request as Tracker to ckeck if peer is online");
+                            outT2P.flush();
+                            System.out.println("Client part of tracker :: send a request as Tracker to ckeck if peer is online");
+                        } catch (IOException e) {
+                            System.out.println("Client part of tracker :: An I/O error occurs when tracker use the output stream to send a message to peer");
+                            e.printStackTrace();
+                        }
+
+                        String peerAnswer = "";
+                        try {
+                            peerAnswer = (String)inT2P.readObject();
+                        } catch (ClassNotFoundException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        } catch (IOException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        }
+                        if(!peerAnswer.equals("Active"))
+                        {
+                            System.out.println("Peer with tokenId " + peerTokenId + " is active");
+                        }
+                        else
+                        {
+                            onlineUsers.remove(peerTokenId);
+                            synchronized(availableFilesWithPeers)
+                            {
+                                availableFilesWithPeers.get(requestFileName).remove(peerTokenId);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        onlineUsers.remove(peerTokenId);
+                        synchronized(availableFilesWithPeers)
+                        {
+                            availableFilesWithPeers.get(requestFileName).remove(peerTokenId);
+                        }
+                    }
+                }
+                else{
+                    synchronized(availableFilesWithPeers)
+                    {
+                        availableFilesWithPeers.get(requestFileName).remove(peerTokenId);
+                    }
+                }
+            }
+        }
+        synchronized(availableFilesWithPeers)
+        {
+            tempUsersWithFile.clear();
+            tempUsersWithFile.addAll(availableFilesWithPeers.get(requestFileName));
+        }
     }
 
     public void logOutHandler(String[] splitRequest){

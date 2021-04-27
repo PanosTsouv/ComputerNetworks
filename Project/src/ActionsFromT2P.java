@@ -204,7 +204,7 @@ public class ActionsFromT2P extends Thread{
                     {
                         ArrayList<String> temp = new ArrayList<>();
                         temp.add(tokenId);
-                        
+                        availableFilesWithPeers.put(splitRequest[i], temp);
                     }
                     else
                     {

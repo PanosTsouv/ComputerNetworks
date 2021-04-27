@@ -3,12 +3,13 @@ public class PeerMain {
 
         PeerNode myPeer = new PeerNode(5002, 5000, "192.168.1.5", "", "");
 
-        // new Thread(new Runnable(){
-        //     @Override
-        //     public void run() {
-        //         myPeer.openServer();
-        //     }
-        // }).start();
+        new Thread(new Runnable(){
+            @Override
+            public void run() {
+                myPeer.openServer();
+            }
+        }).start();
+        
         FileIO.readListFile();
 
         boolean registerFlag = false;
@@ -82,7 +83,7 @@ public class PeerMain {
             {
                 if(loginFlag == false)
                 {
-                    System.out.println("You can not logout withot login first");
+                    System.out.println("You can not logout without login first");
                     continue;
                 }
                 if(myPeer.request("Logout"))

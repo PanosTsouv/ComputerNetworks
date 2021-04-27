@@ -11,15 +11,20 @@ public class ActionsFromT2P extends Thread{
     private Socket connection;
     private ConcurrentHashMap<String, ArrayList<String>> registerUsers;
     private ConcurrentHashMap<String, ArrayList<String>> onlineUsers;
+    private ConcurrentHashMap<String, ArrayList<String>> availableFilesWithPeers;
+    private ArrayList<String> availableFiles;
     private ObjectInputStream in;
     private ObjectOutputStream out;
     
     public ActionsFromT2P(Socket connection, ConcurrentHashMap<String, ArrayList<String>> registerUsers,
-                                ConcurrentHashMap<String, ArrayList<String>> onlineUsers)
+                                ConcurrentHashMap<String, ArrayList<String>> onlineUsers, ArrayList<String> availableFiles,
+                                ConcurrentHashMap<String, ArrayList<String>> availableFilesWithPeers)
     {
         this.connection = connection;
         this.registerUsers = registerUsers;
         this.onlineUsers = onlineUsers;
+        this.availableFiles = availableFiles;
+        this.availableFilesWithPeers = availableFilesWithPeers;
         try {
             this.in = new ObjectInputStream(this.connection.getInputStream());
             this.out = new ObjectOutputStream(this.connection.getOutputStream());
@@ -178,6 +183,44 @@ public class ActionsFromT2P extends Thread{
         }
 
         updateOnlineUserList(peerIp, peerPort, userName, countDownloads, countFailures, Integer.toString(tokenId));
+        updateFileLists(splitRequest, Integer.toString(tokenId));
+    }
+
+    private void updateFileLists(String[] splitRequest, String tokenId)
+    {
+        Boolean fileExists = false;
+
+        for(int i = 2; i < splitRequest.length; i++)
+        {
+            synchronized(availableFiles)
+            {
+                fileExists = availableFiles.contains(splitRequest[i]);
+            }
+            if(fileExists)
+            {
+                synchronized(availableFilesWithPeers)
+                {
+                    if(availableFilesWithPeers.get(splitRequest[i]) == null)
+                    {
+                        ArrayList<String> temp = new ArrayList<>();
+                        temp.add(tokenId);
+                        
+                    }
+                    else
+                    {
+                        ArrayList<String> temp = availableFilesWithPeers.get(splitRequest[i]);
+                        synchronized(temp)
+                        {
+                            temp.add(tokenId);
+                        }
+                    }
+                }
+            }
+        }
+        synchronized(availableFilesWithPeers)
+        {
+            System.out.println("Tracker update availableFilesWithPeers successfully" + availableFilesWithPeers);
+        }
     }
 
     public boolean userAuthentication(String userName, String userPass, String userPasswordInRegisterList)

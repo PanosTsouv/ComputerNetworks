@@ -8,9 +8,12 @@ public class TrackerNode {
     private int serverPort = 0;
     private ConcurrentHashMap<String, ArrayList<String>> registerUsers = new ConcurrentHashMap<>();
     private ConcurrentHashMap<String, ArrayList<String>> onlineUsers = new ConcurrentHashMap<>();
+    private ArrayList<String> availableFiles = new ArrayList<>();
+    private ConcurrentHashMap<String, ArrayList<String>> availableFilesWithPeers = new ConcurrentHashMap<>();
     
     public TrackerNode(int serverPort){
         this.serverPort = serverPort;
+        availableFiles = FileIO.readListFile();
     }
 
     public void openServer(){
@@ -23,7 +26,7 @@ public class TrackerNode {
             {
                 connection = providerSocket.accept();
                 System.out.println("A peer is connected successfully");
-                ActionsFromT2P newPeerConnection = new ActionsFromT2P(connection, registerUsers, onlineUsers);
+                ActionsFromT2P newPeerConnection = new ActionsFromT2P(connection, registerUsers, onlineUsers, availableFiles, availableFilesWithPeers);
                 newPeerConnection.start();
                 System.out.println("A new thread is created by server to handle peer");
             }

@@ -148,7 +148,7 @@ public class ActionsFromT2P extends Thread{
                             // TODO Auto-generated catch block
                             e.printStackTrace();
                         }
-                        if(!peerAnswer.equals("Active"))
+                        if(peerAnswer.equals("Active"))
                         {
                             System.out.println("Peer with tokenId " + peerTokenId + " is active");
                         }
@@ -270,8 +270,11 @@ public class ActionsFromT2P extends Thread{
             return;
         }
 
-        Random rand = new Random();
-        int tokenId = rand.nextInt(1000);
+        int tokenId = 0;
+        do{
+            Random rand = new Random();
+            tokenId = rand.nextInt(1000);
+        }while(onlineUsers.containsKey(Integer.toString(tokenId)));
 
         try {
             out.writeObject(Integer.toString(tokenId));

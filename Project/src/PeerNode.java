@@ -95,7 +95,7 @@ public class PeerNode {
             }else if(mode.equals("List")){
                 request = mode;
             }else if(mode.equals("Details")){
-                request = mode + "," + this.selectedFileName;
+                request = mode + "," + this.selectedFileName + "," + tokenId;
             }else{
                 request = mode + "," + userName + "," + userPass;
             }

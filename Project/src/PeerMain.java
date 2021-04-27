@@ -68,8 +68,9 @@ public class PeerMain {
                     System.out.println("You have to log in to tracker first");
                     continue;
                 }
-                myPeer.request("Details");
                 myPeer.setSelectedFileName(myPeer.askPeerInput("Select a file"));
+                myPeer.request("Details");
+                
             }
             else if(choice.equals("5"))
             {

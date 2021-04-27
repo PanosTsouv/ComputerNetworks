@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.io.Console;
 
 
@@ -81,10 +82,12 @@ public class PeerNode {
         }
         System.out.println("Client Part of Peer :: Peer disconnects from tracker successfully");
     }
-
+    @SuppressWarnings("unchecked")
     public boolean request(String mode)
     {
             String request = "";
+            String answerMessage = "";
+            ArrayList<String> answerMessageList;
             if(mode.equals("Logout"))
             {
                 request = mode + "," + this.tokenId;
@@ -93,7 +96,7 @@ public class PeerNode {
             }else{
                 request = mode + "," + userName + "," + userPass;
             }
-            String answerMessage = "";
+            
             try {
                 out.writeObject(request);
                 System.out.println("Client Part of Peer :: Initialize a stream with this request -> " + request);
@@ -106,17 +109,23 @@ public class PeerNode {
             }
 
         try {
-            answerMessage = (String)in.readObject();
+            
             System.out.println("Client Part of Peer :: Receive answer from server for " + mode + " request");
-            if(mode.equals("Register")){
+            if(mode.equals("Register"))
+            {
+                answerMessage = (String)in.readObject();
                 return handleRegisterResponse(answerMessage);
-            }else if(mode.equals("Login")){
+            }else if(mode.equals("Login"))
+            {
+                answerMessage = (String)in.readObject();
                 return handleLoginResponse(answerMessage);
             }else if(mode.equals("Logout"))
             {
+                answerMessage = (String)in.readObject();
                 return handleLogoutResponse(answerMessage);
             }else{
-                return handleListResponse(answerMessage);
+                answerMessageList = (ArrayList<String>)in.readObject();
+                return handleListResponse(answerMessageList);
             }
         } catch (IOException e) {
             System.out.println("An I/O error occurs when using the input stream for receiving answer of" + mode + " request");
@@ -178,8 +187,8 @@ public class PeerNode {
             return false;
         }
     }
-    public boolean handleListResponse(String answerMessage){
-        if(answerMessage.equals("No files"))
+    public boolean handleListResponse(ArrayList<String> answerMessage){
+        if(answerMessage.isEmpty())
         {
             System.out.println("Client Part of Peer :: Receive answer from server and list of files is empty");
             return false;

@@ -43,7 +43,7 @@ public class ActionsFromT2P extends Thread{
         do{
             try {
                 peerRequest = (String)this.in.readObject();
-                System.out.println("Tracker receive a request -> " + peerRequest);
+                System.out.println("\nTracker receive a request -> " + peerRequest);
             } catch (ClassNotFoundException e) {
                 System.out.println("A ClassNotFoundException error occurs while tracker tries to receive new request");
                 e.printStackTrace();

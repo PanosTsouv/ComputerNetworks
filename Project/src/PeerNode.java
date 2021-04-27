@@ -19,6 +19,7 @@ public class PeerNode {
     private String userName = "";
     private String userPass = "";
     private String tokenId = "";
+    private String selectedFileName = "";
 
     
     public PeerNode(int peerServerPort, int trackerPort, String trackerIP, String userName, String userPass)
@@ -93,6 +94,8 @@ public class PeerNode {
                 request = mode + "," + this.tokenId;
             }else if(mode.equals("List")){
                 request = mode;
+            }else if(mode.equals("Details")){
+                request = mode + "," + this.selectedFileName;
             }else{
                 request = mode + "," + userName + "," + userPass;
             }
@@ -123,9 +126,12 @@ public class PeerNode {
             {
                 answerMessage = (String)in.readObject();
                 return handleLogoutResponse(answerMessage);
-            }else{
+            }else if(mode.equals("List")){
                 answerMessageList = (ArrayList<String>)in.readObject();
                 return handleListResponse(answerMessageList);
+            }else{
+                answerMessage = (String)in.readObject();
+                return handleDetailsResponse(answerMessage);
             }
         } catch (IOException e) {
             System.out.println("An I/O error occurs when using the input stream for receiving answer of" + mode + " request");
@@ -193,7 +199,17 @@ public class PeerNode {
             System.out.println("Client Part of Peer :: Receive answer from server and list of files is empty");
             return false;
         }else{
-            System.out.println("Client Part of Peer :: Receive answer from server and the available files are:/n" + answerMessage);
+            System.out.println("Client Part of Peer :: Receive answer from server and the available files are:\n" + answerMessage);
+            return true;
+        }
+    }
+    public boolean handleDetailsResponse(String answerMessage){
+        if(answerMessage.equals("Fail"))
+        {
+            System.out.println("Client Part of Peer :: Receive answer from server and there is no peer connected with this file");
+            return false;
+        }else{
+            System.out.println("Client Part of Peer :: Receive answer from server and the available peers for this file are:\n" + answerMessage);
             return true;
         }
     }
@@ -284,5 +300,13 @@ public class PeerNode {
     public void setUserPass(String userPass)
     {
         this.userPass = userPass;
+    }
+
+    public String getSelectedFileName(){
+        return this.selectedFileName;
+    }
+
+    public void setSelectedFileName(String selectedFileName){
+        this.selectedFileName = selectedFileName; 
     }
 }

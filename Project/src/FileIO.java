@@ -33,4 +33,14 @@ public class FileIO{
         }
         return fileList;
     }
+
+    public static File returnRequestedFile(String filename){
+        File file = new File("Project/peer1/shared_directory" + filename + ".txt");
+        if(file.exists() && !file.isDirectory()) { 
+            System.out.println("Server part of peer:: Given file doesnt exist in directory");
+            return null;
+        }else{
+            return file;
+        }
+    }
 }

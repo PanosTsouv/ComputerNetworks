@@ -1,6 +1,9 @@
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.net.Socket;
 
 public class ActionsFromP2P extends Thread{
@@ -46,6 +49,21 @@ public class ActionsFromP2P extends Thread{
             } catch (IOException e) {
                 System.out.println("Server Part of Peer :: An I/O error occurs when using the output stream for active answer");
                 e.printStackTrace();
+            }
+        }else{
+            if(FileIO.returnRequestedFile(request)!=null){
+                try {
+                    byte [] mybytearray  = new byte [(int)FileIO.returnRequestedFile(request).length()];
+                    FileInputStream fis = new FileInputStream(FileIO.returnRequestedFile(request));
+                    BufferedInputStream bis = new BufferedInputStream(fis);
+                    bis.read(mybytearray,0,mybytearray.length);
+                    out.write(mybytearray,0,mybytearray.length);
+                    System.out.println("Server Part of Peer :: Initialize a stream with this file -> " + request);
+                    out.flush();
+                } catch (IOException e) {
+                    System.out.println("Server Part of Peer :: An I/O error occurs when using the output stream for sending requested file");
+                    e.printStackTrace();
+                }
             }
         }
         closeConnectionStreams();

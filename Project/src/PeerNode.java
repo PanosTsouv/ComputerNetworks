@@ -5,7 +5,9 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.io.BufferedOutputStream;
 import java.io.Console;
+import java.io.FileOutputStream;
 
 
 public class PeerNode {
@@ -109,6 +111,42 @@ public class PeerNode {
         }
         System.out.println("Client Part of Peer :: Receive answer that target peer is not active");
         return false;
+    }
+
+    public void receiveFile(String peerIP, int peerPort,String file)
+    {
+        byte[] answerFromAnotherPeer = new byte [(int)FileIO.returnRequestedFile(file).length()];
+        connectP2P(peerIP, peerPort);
+        try {
+            outP2P.writeObject("File");
+            System.out.println("Client Part of Peer :: Initialize a stream with this file request");
+            out.flush();
+            System.out.println("Client Part of Peer :: Send an file request");
+        } catch (IOException e) {
+            System.out.println("An I/O error occurs when peer use output stream to request file for download");
+            e.printStackTrace();
+            
+        }
+        int bytesRead;
+        int current;
+        try {
+            
+            FileOutputStream fos = new FileOutputStream("Project/peer1/shared_directory" + file + ".txt");
+            BufferedOutputStream bos = new BufferedOutputStream(fos);
+            bytesRead = in.read(answerFromAnotherPeer,0,answerFromAnotherPeer.length);
+            current = bytesRead;
+
+            do {
+                bytesRead = in.read(answerFromAnotherPeer, current, (answerFromAnotherPeer.length-current));
+                if(bytesRead >= 0) current += bytesRead;
+            } while(bytesRead > -1);
+
+            bos.write(answerFromAnotherPeer, 0 , current);
+            bos.flush();
+        } catch (IOException e) {
+            System.out.println("Client Part of Peer :: An I/O error occurs when using the input stream for receiving requested file");
+            e.printStackTrace();
+        }
     }
 
     public void disconnect()

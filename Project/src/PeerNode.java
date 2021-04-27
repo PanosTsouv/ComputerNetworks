@@ -15,6 +15,11 @@ public class PeerNode {
     private ObjectInputStream in;
     private ObjectOutputStream out;
     Socket requestSocket = null;
+    private ArrayList<String> onlinePeersFromDetailsResponse;
+
+    private ObjectInputStream inP2P;
+    private ObjectOutputStream outP2P;
+    Socket requestSocketP2P = null;
 
     private String userName = "";
     private String userPass = "";
@@ -52,6 +57,60 @@ public class PeerNode {
         }
     }
 
+    public void connectP2P(String connectionIp, int connectionPort)
+    {
+        try
+        {
+            requestSocketP2P = new Socket(connectionIp, connectionPort);
+            outP2P = new ObjectOutputStream(requestSocketP2P.getOutputStream());
+            inP2P = new ObjectInputStream(requestSocketP2P.getInputStream());
+            System.out.println("Client Part of peer :: Peer is successfully connected with peer's server with IP: " + connectionIp + " Port: " + connectionPort);
+        } 
+        catch(UnknownHostException unknownHost) 
+        {
+            System.err.println("You are trying to connect to an unknown peer host!");
+        } 
+        catch (IOException ioException) 
+        {
+            System.err.println("You are trying to connect to an offline server.Check the peer's server IP and port");
+        }
+    }
+
+    public boolean checkActive(String peerIP, int peerPort)
+    {
+        String answerFromAnotherPeer = "";
+        connectP2P(peerIP, peerPort);
+        try {
+            outP2P.writeObject("Peer");
+            System.out.println("Client Part of Peer :: Initialize a stream with this an check_active request");
+            out.flush();
+            System.out.println("Client Part of Peer :: Send an check_active request");
+        } catch (IOException e) {
+            System.out.println("An I/O error occurs when peer use output stream to check another peer's activity");
+            e.printStackTrace();
+            return false;
+        }
+
+        try {
+            answerFromAnotherPeer = (String)inP2P.readObject();
+        } catch (ClassNotFoundException e) {
+            System.out.println("An ClassNotFoundException error occurs while peer was waiting active answer response fror another peer");
+            e.printStackTrace();
+            return false;
+        } catch (IOException e) {
+            System.out.println("An I/O error occurs while peer was waiting active answer response fror another peer");
+            e.printStackTrace();
+            return false;
+        }
+
+        if(answerFromAnotherPeer.equals("Active")){
+            System.out.println("Client Part of Peer :: Receive an active answer that target peer is active");
+            return true;
+        }
+        System.out.println("Client Part of Peer :: Receive answer that target peer is not active");
+        return false;
+    }
+
     public void disconnect()
     {
         if(requestSocket != null)
@@ -83,6 +142,7 @@ public class PeerNode {
         }
         System.out.println("Client Part of Peer :: Peer disconnects from tracker successfully");
     }
+
     @SuppressWarnings("unchecked")
     public boolean request(String mode)
     {
@@ -210,6 +270,11 @@ public class PeerNode {
             return false;
         }else{
             System.out.println("Client Part of Peer :: Receive answer from server and the available peers for this file are:\n" + answerMessage);
+            onlinePeersFromDetailsResponse = new ArrayList<>();
+            for(String peerInfo : answerMessage.split("/"))
+            {
+                onlinePeersFromDetailsResponse.add(peerInfo);
+            }
             return true;
         }
     }

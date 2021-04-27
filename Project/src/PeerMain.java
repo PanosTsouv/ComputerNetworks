@@ -74,7 +74,13 @@ public class PeerMain {
             }
             else if(choice.equals("5"))
             {
-                //TO DO
+                if(loginFlag == false)
+                {
+                    System.out.println("You can not checkActive without login first");
+                    continue;
+                }
+                myPeer.checkActive(myPeer.askPeerInput("Enter peer's IP").replaceAll("[ ']", ""), Integer.parseInt(myPeer.askPeerInput("Enter peer's Port").replaceAll("[ ']", "")));
+
             }
             else if(choice.equals("6"))
             {

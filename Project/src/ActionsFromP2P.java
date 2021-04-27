@@ -36,7 +36,7 @@ public class ActionsFromP2P extends Thread{
             System.out.println("Server Part of Peer :: An I/O error occurs while peer server tries to receive new request");
             e.printStackTrace();
         }
-        if(request.equals("Tracker")){
+        if(request.equals("Tracker") || request.equals("Peer")){
             try {
                 answer = "Active";
                 out.writeObject(answer);

@@ -83,6 +83,39 @@ public class ActionsFromT2P extends Thread{
                 detailsHandler(splitRequest);
             }
         }while(!splitRequest[0].equals("Logout"));
+        closeServerConnectionStreams();
+    }
+
+    public void closeServerConnectionStreams()
+    {
+        if(connectionT2P != null)
+        {
+            try {
+                connection.close();
+            } catch (Exception e) {
+                System.out.println("An I/O error occurs when try to close server connection from server part of Tracker");
+                e.printStackTrace();
+            }
+            if(outT2P != null)
+            {
+                try {
+                    out.close();
+                } catch (Exception e) {
+                    System.out.println("An I/O error occurs when try to close output stream from server part of Tracker");
+                    e.printStackTrace();
+                }
+            }
+            if(inT2P != null)
+            {
+                try {
+                    in.close();
+                } catch (Exception e) {
+                    System.out.println("An I/O error occurs when try to close input stream from server part of Tracker");
+                    e.printStackTrace();
+                }
+            }
+        }
+        System.out.println("Tracker disconnects from peer successfully");
     }
 
     public boolean connect(String connectionIp, int connectionPort, String tokenId)
@@ -107,19 +140,52 @@ public class ActionsFromT2P extends Thread{
         }
     }
 
+    public void disconnect()
+    {
+        if(connectionT2P != null)
+        {
+            try {
+                connectionT2P.close();
+            } catch (Exception e) {
+                System.out.println("An I/O error occurs when try to close server connection to peer");
+                e.printStackTrace();
+            }
+            if(outT2P != null)
+            {
+                try {
+                    outT2P.close();
+                } catch (Exception e) {
+                    System.out.println("An I/O error occurs when try to close output stream");
+                    e.printStackTrace();
+                }
+            }
+            if(inT2P != null)
+            {
+                try {
+                    inT2P.close();
+                } catch (Exception e) {
+                    System.out.println("An I/O error occurs when try to close input stream");
+                    e.printStackTrace();
+                }
+            }
+        }
+        System.out.println("Client Part of Tracker :: Tracker disconnects from peer successfully");
+    }
+
     public void detailsHandler(String[] splitRequest)
     {
         String currentPeerIP = "";
         String currentPeerPort = "";
 
         String requestFileName = splitRequest[1];
-        System.out.println("--------------------Requested file is:" + requestFileName);
         ArrayList<String> tempUsersWithFile = new ArrayList<>();
         ArrayList<String> tempOnlineUsersWithFile = new ArrayList<>();
         synchronized(availableFilesWithPeers)
         {
-            tempUsersWithFile.addAll(availableFilesWithPeers.get(requestFileName));
-            System.out.println("------------tempUsersWithFile = " + tempUsersWithFile);
+            if(availableFilesWithPeers.get(requestFileName) != null)
+            {
+                tempUsersWithFile.addAll(availableFilesWithPeers.get(requestFileName));
+            }
         }
         for(String peerTokenId : tempUsersWithFile)
         {
@@ -128,51 +194,54 @@ public class ActionsFromT2P extends Thread{
             }
             synchronized(onlineUsers)
             {
-                if(onlineUsers.get(peerTokenId) != null)
+                if(onlineUsers.get(peerTokenId) == null)
                 {
-                    currentPeerIP = onlineUsers.get(peerTokenId).get(0);
-                    currentPeerPort = onlineUsers.get(peerTokenId).get(1);
-                    if(connect(currentPeerIP, Integer.parseInt(currentPeerPort), peerTokenId))
+                    synchronized(availableFilesWithPeers)
                     {
-                        try {
-                            outT2P.writeObject("Tracker");
-                            System.out.println("Client part of tracker :: initialize a request as Tracker to ckeck if peer is online");
-                            outT2P.flush();
-                            System.out.println("Client part of tracker :: send a request as Tracker to ckeck if peer is online");
-                        } catch (IOException e) {
-                            System.out.println("Client part of tracker :: An I/O error occurs when tracker use the output stream to send a message to peer");
-                            e.printStackTrace();
-                        }
+                        availableFilesWithPeers.get(requestFileName).remove(peerTokenId);
+                        continue;
+                    }
+                }
+                currentPeerIP = onlineUsers.get(peerTokenId).get(0);
+                currentPeerPort = onlineUsers.get(peerTokenId).get(1);
+            }
+            if(connect(currentPeerIP, Integer.parseInt(currentPeerPort), peerTokenId))
+            {
+                try {
+                    outT2P.writeObject("Tracker");
+                    System.out.println("Client part of tracker :: initialize a request as Tracker to ckeck if peer is online");
+                    outT2P.flush();
+                    System.out.println("Client part of tracker :: send a request as Tracker to check if peer is online");
+                } catch (IOException e) {
+                    System.out.println("Client part of tracker :: An I/O error occurs when tracker use the output stream to send a message to peer");
+                    e.printStackTrace();
+                }
 
-                        String peerAnswer = "";
-                        try {
-                            peerAnswer = (String)inT2P.readObject();
-                        } catch (ClassNotFoundException e) {
-                            // TODO Auto-generated catch block
-                            e.printStackTrace();
-                        } catch (IOException e) {
-                            // TODO Auto-generated catch block
-                            e.printStackTrace();
-                        }
-                        if(peerAnswer.equals("Active"))
-                        {
-                            System.out.println("Peer with tokenId " + peerTokenId + " is active");
-                            tempOnlineUsersWithFile.add(peerTokenId);
-                            continue;
-                        }
-                    }
-                    onlineUsers.remove(peerTokenId);
-                    synchronized(availableFilesWithPeers)
-                    {
-                        availableFilesWithPeers.get(requestFileName).remove(peerTokenId);
-                    }
+                String peerAnswer = "";
+                try {
+                    peerAnswer = (String)inT2P.readObject();
+                } catch (ClassNotFoundException e) {
+                    System.out.println("An ClassNotFoundException error occurs while tracker tries to receive message that peer is active");
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    System.out.println("An I/O error occurs while tracker tries to receive message that peer is active");
+                    e.printStackTrace();
                 }
-                else{
-                    synchronized(availableFilesWithPeers)
-                    {
-                        availableFilesWithPeers.get(requestFileName).remove(peerTokenId);
-                    }
+                if(peerAnswer.equals("Active"))
+                {
+                    System.out.println("Peer with tokenId " + peerTokenId + " is active");
+                    tempOnlineUsersWithFile.add(peerTokenId);
+                    disconnect();
+                    continue;
                 }
+            }
+            synchronized(onlineUsers)
+            {
+                onlineUsers.remove(peerTokenId);
+            }
+            synchronized(availableFilesWithPeers)
+            {
+                availableFilesWithPeers.get(requestFileName).remove(peerTokenId);
             }
         }
         String detailsAnswer = "";
@@ -184,9 +253,16 @@ public class ActionsFromT2P extends Thread{
         }
         try {
             if(detailsAnswer.equals(""))
-            {out.writeObject("Fail");}
+            {
+                out.writeObject("Fail");
+                System.out.println("Tracker answer that there are not online peer with file " + requestFileName);
+            }
             else
-            {out.writeObject(detailsAnswer);}
+            {
+                detailsAnswer = detailsAnswer.substring(0,detailsAnswer.length() - 1);
+                out.writeObject(detailsAnswer);
+                System.out.println("Tracker answer that there are online peers with file " + requestFileName + " and send their information " + detailsAnswer);
+            }
         } catch (IOException e) {
             
             e.printStackTrace();
@@ -401,7 +477,7 @@ public class ActionsFromT2P extends Thread{
         try {
             out.writeObject(availableFiles);
             out.flush();
-            System.out.println("Tracker send list with avalables files " + availableFiles);
+            System.out.println("Tracker send list with available files " + availableFiles);
         } catch (IOException e) {
             System.out.println("An I/O error occurs while tracker tries to send list with avalables files for list request");
             e.printStackTrace();

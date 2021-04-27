@@ -247,10 +247,10 @@ public class PeerNode {
             while(true)
             {
                 connection = providerSocket.accept();
-                System.out.println("Peer Server Part :: A peer is connected successfully");
+                System.out.println("\nPeer Server Part :: A user is connected successfully");
                 ActionsFromP2P newPeerConnection = new ActionsFromP2P(connection);
                 new Thread(newPeerConnection).start();
-                System.out.println("Peer Server Part :: A new thread is created to handle another peer");
+                System.out.println("Peer Server Part :: A new thread is created to handle another user");
             }
         }
         catch (IOException e) 
@@ -262,7 +262,8 @@ public class PeerNode {
         {
             try 
             {
-                System.out.println("Peer Server Part :: A peer disconnect from server successfully");
+                System.out.println("Peer Server Part :: Server is closed");
+                System.out.println("Peer Server Part :: Remind message --> MENU is still open");
                 providerSocket.close();
             } 
             catch (IOException ioException) 

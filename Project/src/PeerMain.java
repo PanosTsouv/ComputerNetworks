@@ -16,7 +16,7 @@ public class PeerMain {
         boolean loginFlag = false;
         while(true)
         {
-            System.out.println("Status: Register -> " + registerFlag + " , Login -> " + loginFlag);
+            System.out.println("\nStatus: Register -> " + registerFlag + " , Login -> " + loginFlag);
             String choice = myPeer.askPeerInput
             ("Press 1 -> Register\nPress 2 -> Login\nPress 3 -> list\nPress 4 -> details\nPress 5 -> checkActive \nPress 6 -> simpleDownload\nPress 7 -> Logout");
 

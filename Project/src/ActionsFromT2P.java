@@ -41,7 +41,7 @@ public class ActionsFromT2P extends Thread{
 
     @Override
     public void run() {
-        System.out.println("\nNew thread start running...");
+        System.out.println("New thread start running...");
         String peerRequest = "";
         String[] splitRequest = null;
 
@@ -158,23 +158,13 @@ public class ActionsFromT2P extends Thread{
                         {
                             System.out.println("Peer with tokenId " + peerTokenId + " is active");
                             tempOnlineUsersWithFile.add(peerTokenId);
-                        }
-                        else
-                        {
-                            onlineUsers.remove(peerTokenId);
-                            synchronized(availableFilesWithPeers)
-                            {
-                                availableFilesWithPeers.get(requestFileName).remove(peerTokenId);
-                            }
+                            continue;
                         }
                     }
-                    else
+                    onlineUsers.remove(peerTokenId);
+                    synchronized(availableFilesWithPeers)
                     {
-                        onlineUsers.remove(peerTokenId);
-                        synchronized(availableFilesWithPeers)
-                        {
-                            availableFilesWithPeers.get(requestFileName).remove(peerTokenId);
-                        }
+                        availableFilesWithPeers.get(requestFileName).remove(peerTokenId);
                     }
                 }
                 else{
@@ -186,14 +176,17 @@ public class ActionsFromT2P extends Thread{
             }
         }
         String detailsAnswer = "";
-        synchronized(availableFilesWithPeers)
+        synchronized(onlineUsers)
         {
             for(String peer: tempOnlineUsersWithFile){
                 detailsAnswer += onlineUsers.get(peer).get(0) + "," + onlineUsers.get(peer).get(1) + "," + onlineUsers.get(peer).get(2) + "," + onlineUsers.get(peer).get(3) + "," + onlineUsers.get(peer).get(4) + "/";
             }
         }
         try {
-            out.writeObject(detailsAnswer);
+            if(detailsAnswer.equals(""))
+            {out.writeObject("Fail");}
+            else
+            {out.writeObject(detailsAnswer);}
         } catch (IOException e) {
             
             e.printStackTrace();

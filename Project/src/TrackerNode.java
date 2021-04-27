@@ -26,7 +26,7 @@ public class TrackerNode {
             while(true)
             {
                 connection = providerSocket.accept();
-                System.out.println("A peer is connected successfully");
+                System.out.println("\nA peer is connected successfully");
                 ActionsFromT2P newPeerConnection = new ActionsFromT2P(connection, registerUsers, onlineUsers, availableFiles, availableFilesWithPeers);
                 newPeerConnection.start();
                 System.out.println("A new thread is created by server to handle peer");

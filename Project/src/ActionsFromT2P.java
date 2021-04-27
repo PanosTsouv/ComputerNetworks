@@ -68,6 +68,10 @@ public class ActionsFromT2P extends Thread{
             {
                 System.out.println("Tracker receive a logout request and start handling it.....");
                 logOutHandler(splitRequest);
+            }else if(splitRequest[0].equals("List"))
+            {
+                System.out.println("Tracker receive a list request and start handling it.....");
+                listHandler();
             }
         }while(!splitRequest[0].equals("Logout"));
     }
@@ -269,6 +273,18 @@ public class ActionsFromT2P extends Thread{
         {
             onlineUsers.put(tokenId, onlineUserInfo);
             System.out.println("Tracker add peer with tokenId " + tokenId + "=" + onlineUsers.get(tokenId) + " to online peers list");
+        }
+    }
+
+    public void listHandler()
+    {
+        try {
+            out.writeObject(availableFiles);
+            out.flush();
+            System.out.println("Tracker send list with avalables files " + availableFiles);
+        } catch (IOException e) {
+            System.out.println("An I/O error occurs while tracker tries to send list with avalables files for list request");
+            e.printStackTrace();
         }
     }
 }

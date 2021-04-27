@@ -1,13 +1,16 @@
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.io.BufferedOutputStream;
+import java.util.Calendar;
+import java.util.concurrent.ConcurrentHashMap;
 import java.io.Console;
-import java.io.FileOutputStream;
 
 
 public class PeerNode {
@@ -27,6 +30,7 @@ public class PeerNode {
     private String userPass = "";
     private String tokenId = "";
     private String selectedFileName = "";
+    private String sharedDirectoryPath = "";
 
     
     public PeerNode(int peerServerPort, int trackerPort, String trackerIP, String userName, String userPass)
@@ -63,7 +67,8 @@ public class PeerNode {
     {
         try
         {
-            requestSocketP2P = new Socket(connectionIp, connectionPort);
+            requestSocketP2P = new Socket();
+            requestSocketP2P.connect(new InetSocketAddress(connectionIp, connectionPort), 2000);
             outP2P = new ObjectOutputStream(requestSocketP2P.getOutputStream());
             inP2P = new ObjectInputStream(requestSocketP2P.getInputStream());
             System.out.println("Client Part of peer :: Peer is successfully connected with peer's server with IP: " + connectionIp + " Port: " + connectionPort);
@@ -83,9 +88,9 @@ public class PeerNode {
         String answerFromAnotherPeer = "";
         connectP2P(peerIP, peerPort);
         try {
-            outP2P.writeObject("Peer");
+            if(outP2P != null){outP2P.writeObject("Peer");}
             System.out.println("Client Part of Peer :: Initialize a stream with this an check_active request");
-            out.flush();
+            if(outP2P != null){outP2P.flush();}
             System.out.println("Client Part of Peer :: Send an check_active request");
         } catch (IOException e) {
             System.out.println("An I/O error occurs when peer use output stream to check another peer's activity");
@@ -94,7 +99,7 @@ public class PeerNode {
         }
 
         try {
-            answerFromAnotherPeer = (String)inP2P.readObject();
+            if(inP2P != null){answerFromAnotherPeer = (String)inP2P.readObject();}
         } catch (ClassNotFoundException e) {
             System.out.println("An ClassNotFoundException error occurs while peer was waiting active answer response fror another peer");
             e.printStackTrace();
@@ -113,37 +118,52 @@ public class PeerNode {
         return false;
     }
 
+    public void simpleDownload()
+    {
+        String currentPeerIp = "";
+        String currentPeerPort = "";
+        String currentPeerUserName = "";
+        String currentPeerDownloads = "";
+        String currentPeerFialures = "";
+        ConcurrentHashMap<String, Double> scorePerPeer = new ConcurrentHashMap<>();
+        
+        for(String peerInfo : onlinePeersFromDetailsResponse)
+        {
+            currentPeerIp = peerInfo.split(",")[0];
+            currentPeerPort = peerInfo.split(",")[1];
+            currentPeerUserName = peerInfo.split(",")[2];
+            currentPeerDownloads = peerInfo.split(",")[3];
+            currentPeerFialures = peerInfo.split(",")[4];
+            long start = Calendar.getInstance().getTimeInMillis();
+            checkActive(currentPeerIp,Integer.parseInt(currentPeerPort));
+            long end = Calendar.getInstance().getTimeInMillis();
+            long time = end - start;
+            System.out.println("time : " + time);
+            scorePerPeer.put(currentPeerUserName, time * Math.pow(0.9, Double.parseDouble(currentPeerDownloads)) * Math.pow(1.2, Double.parseDouble(currentPeerFialures)));
+        }
+        System.out.println(scorePerPeer);
+
+
+        receiveFile(currentPeerIp ,Integer.parseInt(currentPeerPort), selectedFileName);
+    }
+
     public void receiveFile(String peerIP, int peerPort,String file)
     {
-        byte[] answerFromAnotherPeer = new byte [(int)FileIO.returnRequestedFile(file).length()];
         connectP2P(peerIP, peerPort);
+        byte[] answerFromAnotherPeer = null;
         try {
-            outP2P.writeObject("File");
+            outP2P.writeObject(file);
             System.out.println("Client Part of Peer :: Initialize a stream with this file request");
-            out.flush();
+            outP2P.flush();
             System.out.println("Client Part of Peer :: Send an file request");
         } catch (IOException e) {
             System.out.println("An I/O error occurs when peer use output stream to request file for download");
-            e.printStackTrace();
-            
+            e.printStackTrace();    
         }
-        int bytesRead;
-        int current;
         try {
-            
-            FileOutputStream fos = new FileOutputStream("Project/peer1/shared_directory" + file + ".txt");
-            BufferedOutputStream bos = new BufferedOutputStream(fos);
-            bytesRead = in.read(answerFromAnotherPeer,0,answerFromAnotherPeer.length);
-            current = bytesRead;
-
-            do {
-                bytesRead = in.read(answerFromAnotherPeer, current, (answerFromAnotherPeer.length-current));
-                if(bytesRead >= 0) current += bytesRead;
-            } while(bytesRead > -1);
-
-            bos.write(answerFromAnotherPeer, 0 , current);
-            bos.flush();
-        } catch (IOException e) {
+            answerFromAnotherPeer = (byte[])inP2P.readObject();
+            Files.write(Paths.get(sharedDirectoryPath + "/" + file + ".txt"), answerFromAnotherPeer);
+        } catch (IOException | ClassNotFoundException e){
             System.out.println("Client Part of Peer :: An I/O error occurs when using the input stream for receiving requested file");
             e.printStackTrace();
         }
@@ -318,7 +338,7 @@ public class PeerNode {
     }
 
     public void inform(){
-        String inform = "192.168.1.5" + "," + peerServerPort + "," + FileIO.readPeerFiles();
+        String inform = "192.168.1.5" + "," + peerServerPort + "," + FileIO.readPeerFiles(this.sharedDirectoryPath);
         try {
             out.writeObject(inform);
             System.out.println("Client Part of Peer :: Initialize a stream with this information -> " + inform);
@@ -351,7 +371,7 @@ public class PeerNode {
             {
                 connection = providerSocket.accept();
                 System.out.println("\nPeer Server Part :: A user is connected successfully");
-                ActionsFromP2P newPeerConnection = new ActionsFromP2P(connection);
+                ActionsFromP2P newPeerConnection = new ActionsFromP2P(connection, getSharedDirectoryPath());
                 new Thread(newPeerConnection).start();
                 System.out.println("Peer Server Part :: A new thread is created to handle another user");
             }
@@ -412,5 +432,15 @@ public class PeerNode {
 
     public void setSelectedFileName(String selectedFileName){
         this.selectedFileName = selectedFileName; 
+    }
+
+    public String getSharedDirectoryPath()
+    {
+        return this.sharedDirectoryPath;
+    }
+
+    public void setSharedDirectoryPath(String sharedDirectoryPath)
+    {
+        this.sharedDirectoryPath = sharedDirectoryPath;
     }
 }

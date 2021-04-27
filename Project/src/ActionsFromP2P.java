@@ -1,19 +1,20 @@
-import java.io.BufferedInputStream;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.OutputStream;
 import java.net.Socket;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 public class ActionsFromP2P extends Thread{
 
     Socket connection;
     private ObjectInputStream in;
     private ObjectOutputStream out;
+    private String sharedDirectoryPath = "";
 
-    public ActionsFromP2P(Socket connection){
+    public ActionsFromP2P(Socket connection, String sharedDirectoryPath){
         this.connection = connection;
+        this.sharedDirectoryPath = sharedDirectoryPath;
         try {
             this.in = new ObjectInputStream(this.connection.getInputStream());
             this.out = new ObjectOutputStream(this.connection.getOutputStream());
@@ -51,13 +52,10 @@ public class ActionsFromP2P extends Thread{
                 e.printStackTrace();
             }
         }else{
-            if(FileIO.returnRequestedFile(request)!=null){
+            if(FileIO.returnRequestedFile(request, sharedDirectoryPath)!=null){
                 try {
-                    byte [] mybytearray  = new byte [(int)FileIO.returnRequestedFile(request).length()];
-                    FileInputStream fis = new FileInputStream(FileIO.returnRequestedFile(request));
-                    BufferedInputStream bis = new BufferedInputStream(fis);
-                    bis.read(mybytearray,0,mybytearray.length);
-                    out.write(mybytearray,0,mybytearray.length);
+                    byte[] requestFile = Files.readAllBytes(Paths.get(sharedDirectoryPath + "/" + request + ".txt"));
+                    out.writeObject(requestFile);
                     System.out.println("Server Part of Peer :: Initialize a stream with this file -> " + request);
                     out.flush();
                 } catch (IOException e) {

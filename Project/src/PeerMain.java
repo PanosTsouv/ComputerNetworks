@@ -1,7 +1,11 @@
+import java.util.Random;
+
 public class PeerMain {
     public static void main(String[] args) {
 
-        PeerNode myPeer = new PeerNode(5002, 5000, "192.168.1.5", "", "");
+        Random r = new Random();
+        PeerNode myPeer = new PeerNode(r.nextInt(4000-1000) + 1000, 5000, "192.168.1.5", "", "");
+        myPeer.setSharedDirectoryPath(myPeer.askPeerInput("Enter path of shared directory"));
 
         new Thread(new Runnable(){
             @Override
@@ -84,7 +88,7 @@ public class PeerMain {
             }
             else if(choice.equals("6"))
             {
-                //TO DO
+                myPeer.simpleDownload();
             }
             else if(choice.equals("7"))
             {

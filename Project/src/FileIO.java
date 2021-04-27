@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.Scanner;
 public class FileIO{
     
-    public static String readPeerFiles(){
-        File folder = new File("Project/peer1/shared_directory");
+    public static String readPeerFiles(String sharedDirectoryPath){
+        File folder = new File(sharedDirectoryPath);
         File[] listOfFiles = folder.listFiles();
         String fileNames = "";
         for (File file : listOfFiles) {
@@ -21,7 +21,7 @@ public class FileIO{
         ArrayList<String> fileList = new ArrayList<>();
         try {
             
-            File myObj = new File("Project/src/fileDownloadList.txt");
+            File myObj = new File("fileDownloadList.txt");
             Scanner myReader = new Scanner(myObj);
             while (myReader.hasNextLine()) {
                 fileList.add(myReader.nextLine());
@@ -34,9 +34,9 @@ public class FileIO{
         return fileList;
     }
 
-    public static File returnRequestedFile(String filename){
-        File file = new File("Project/peer1/shared_directory" + filename + ".txt");
-        if(file.exists() && !file.isDirectory()) { 
+    public static File returnRequestedFile(String filename, String sharedDirectoryPath){
+        File file = new File(sharedDirectoryPath + "/" + filename + ".txt");
+        if(!file.exists()) { 
             System.out.println("Server part of peer:: Given file doesnt exist in directory");
             return null;
         }else{

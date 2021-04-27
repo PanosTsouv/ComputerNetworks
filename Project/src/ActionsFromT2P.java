@@ -113,13 +113,19 @@ public class ActionsFromT2P extends Thread{
         String currentPeerPort = "";
 
         String requestFileName = splitRequest[1];
+        System.out.println("--------------------Requested file is:" + requestFileName);
         ArrayList<String> tempUsersWithFile = new ArrayList<>();
+        ArrayList<String> tempOnlineUsersWithFile = new ArrayList<>();
         synchronized(availableFilesWithPeers)
         {
             tempUsersWithFile.addAll(availableFilesWithPeers.get(requestFileName));
+            System.out.println("------------tempUsersWithFile = " + tempUsersWithFile);
         }
         for(String peerTokenId : tempUsersWithFile)
         {
+            if(splitRequest[2].equals(peerTokenId)){
+                continue;
+            }
             synchronized(onlineUsers)
             {
                 if(onlineUsers.get(peerTokenId) != null)
@@ -151,6 +157,7 @@ public class ActionsFromT2P extends Thread{
                         if(peerAnswer.equals("Active"))
                         {
                             System.out.println("Peer with tokenId " + peerTokenId + " is active");
+                            tempOnlineUsersWithFile.add(peerTokenId);
                         }
                         else
                         {
@@ -178,10 +185,18 @@ public class ActionsFromT2P extends Thread{
                 }
             }
         }
+        String detailsAnswer = "";
         synchronized(availableFilesWithPeers)
         {
-            tempUsersWithFile.clear();
-            tempUsersWithFile.addAll(availableFilesWithPeers.get(requestFileName));
+            for(String peer: tempOnlineUsersWithFile){
+                detailsAnswer += onlineUsers.get(peer).get(0) + "," + onlineUsers.get(peer).get(1) + "," + onlineUsers.get(peer).get(2) + "," + onlineUsers.get(peer).get(3) + "," + onlineUsers.get(peer).get(4) + "/";
+            }
+        }
+        try {
+            out.writeObject(detailsAnswer);
+        } catch (IOException e) {
+            
+            e.printStackTrace();
         }
     }
 

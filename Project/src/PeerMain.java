@@ -9,6 +9,7 @@ public class PeerMain {
         //         myPeer.openServer();
         //     }
         // }).start();
+        FileIO.readListFile();
 
         boolean registerFlag = false;
         boolean loginFlag = false;
@@ -54,7 +55,11 @@ public class PeerMain {
             }
             else if(choice.equals("3"))
             {
-                //TO DO LIST
+                if(loginFlag==false){
+                    System.out.println("You have to log in to tracker first");
+                    continue;
+                }
+                myPeer.request("List");
             }
             else if(choice.equals("4"))
             {

@@ -84,10 +84,14 @@ public class PeerNode {
 
     public boolean request(String mode)
     {
-            String request = mode + "," + userName + "," + userPass;
+            String request = "";
             if(mode.equals("Logout"))
             {
                 request = mode + "," + this.tokenId;
+            }else if(mode.equals("List")){
+                request = mode;
+            }else{
+                request = mode + "," + userName + "," + userPass;
             }
             String answerMessage = "";
             try {
@@ -108,9 +112,11 @@ public class PeerNode {
                 return handleRegisterResponse(answerMessage);
             }else if(mode.equals("Login")){
                 return handleLoginResponse(answerMessage);
-            }else
+            }else if(mode.equals("Logout"))
             {
                 return handleLogoutResponse(answerMessage);
+            }else{
+                return handleListResponse(answerMessage);
             }
         } catch (IOException e) {
             System.out.println("An I/O error occurs when using the input stream for receiving answer of" + mode + " request");
@@ -170,6 +176,16 @@ public class PeerNode {
         }else{
             System.out.println("Client Part of Peer :: Receive answer from server and logout request was failed");
             return false;
+        }
+    }
+    public boolean handleListResponse(String answerMessage){
+        if(answerMessage.equals("No files"))
+        {
+            System.out.println("Client Part of Peer :: Receive answer from server and list of files is empty");
+            return false;
+        }else{
+            System.out.println("Client Part of Peer :: Receive answer from server and the available files are:/n" + answerMessage);
+            return true;
         }
     }
 

@@ -168,11 +168,11 @@ public class ActionsFromT2P extends Thread{
             System.out.println("An I/O error occurs while tracker tries to send tokenID for login request");
             e.printStackTrace();
         }
-
+        String userInform = "";
         try {
-            String userIpPort = (String)in.readObject();
-            peerIp = userIpPort.split(",")[0];
-            peerPort = userIpPort.split(",")[1];
+            userInform = (String)in.readObject();
+            peerIp = userInform.split(",")[0];
+            peerPort = userInform.split(",")[1];
             System.out.println("Tracker receive Ip-Port from peer " + userName);
         } catch (ClassNotFoundException e) {
             System.out.println("A ClassNotFoundException error occurs while tracker tries to receive Ip-Port from peer " + userName);
@@ -183,13 +183,12 @@ public class ActionsFromT2P extends Thread{
         }
 
         updateOnlineUserList(peerIp, peerPort, userName, countDownloads, countFailures, Integer.toString(tokenId));
-        updateFileLists(splitRequest, Integer.toString(tokenId));
+        updateFileLists(userInform.split(","), Integer.toString(tokenId));
     }
 
     private void updateFileLists(String[] splitRequest, String tokenId)
     {
         Boolean fileExists = false;
-
         for(int i = 2; i < splitRequest.length; i++)
         {
             synchronized(availableFiles)
@@ -219,7 +218,7 @@ public class ActionsFromT2P extends Thread{
         }
         synchronized(availableFilesWithPeers)
         {
-            System.out.println("Tracker update availableFilesWithPeers successfully" + availableFilesWithPeers);
+            System.out.println("Tracker update availableFilesWithPeers successfully " + availableFilesWithPeers);
         }
     }
 

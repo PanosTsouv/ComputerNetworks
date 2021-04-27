@@ -14,6 +14,7 @@ public class TrackerNode {
     public TrackerNode(int serverPort){
         this.serverPort = serverPort;
         availableFiles = FileIO.readListFile();
+        System.out.println("Availables files are: " + availableFiles);
     }
 
     public void openServer(){

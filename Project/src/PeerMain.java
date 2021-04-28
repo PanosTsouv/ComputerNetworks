@@ -18,6 +18,7 @@ public class PeerMain {
 
         boolean registerFlag = false;
         boolean loginFlag = false;
+        boolean detailsFlag = false;
         while(true)
         {
             System.out.println("\nStatus: Register -> " + registerFlag + " , Login -> " + loginFlag);
@@ -84,11 +85,17 @@ public class PeerMain {
                     continue;
                 }
                 myPeer.checkActive(myPeer.askPeerInput("Enter peer's IP").replaceAll("[ ']", ""), Integer.parseInt(myPeer.askPeerInput("Enter peer's Port").replaceAll("[ ']", "")));
-
+                detailsFlag = true;
             }
             else if(choice.equals("6"))
             {
-                myPeer.simpleDownload();
+                if(detailsFlag==true){
+                    myPeer.simpleDownload();
+                    detailsFlag=false;
+                }else{
+                    System.out.println("You should press details first");
+                }
+                
             }
             else if(choice.equals("7"))
             {

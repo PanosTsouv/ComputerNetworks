@@ -430,8 +430,12 @@ public class PeerNode {
         return this.selectedFileName;
     }
 
-    public void setSelectedFileName(String selectedFileName){
-        this.selectedFileName = selectedFileName; 
+    public void setSelectedFileName(String selectedFileName){ 
+        if(FileIO.readPeerFiles(sharedDirectoryPath).contains(selectedFileName)){
+            System.out.println("This file is already in your directory");
+        }else{
+            this.selectedFileName = selectedFileName;
+        }
     }
 
     public String getSharedDirectoryPath()

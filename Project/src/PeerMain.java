@@ -75,7 +75,7 @@ public class PeerMain {
                 }
                 myPeer.setSelectedFileName(myPeer.askPeerInput("Select a file"));
                 myPeer.request("Details");
-                
+                detailsFlag = true;
             }
             else if(choice.equals("5"))
             {
@@ -84,8 +84,7 @@ public class PeerMain {
                     System.out.println("You can not checkActive without login first");
                     continue;
                 }
-                myPeer.checkActive(myPeer.askPeerInput("Enter peer's IP").replaceAll("[ ']", ""), Integer.parseInt(myPeer.askPeerInput("Enter peer's Port").replaceAll("[ ']", "")));
-                detailsFlag = true;
+                myPeer.checkActive(myPeer.askPeerInput("Enter peer's IP").replaceAll("[ ']", ""), Integer.parseInt(myPeer.askPeerInput("Enter peer's Port").replaceAll("[ ']", "")));  
             }
             else if(choice.equals("6"))
             {

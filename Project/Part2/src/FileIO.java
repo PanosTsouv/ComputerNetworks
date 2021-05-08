@@ -1,5 +1,9 @@
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Scanner;
 public class FileIO{
@@ -40,6 +44,31 @@ public class FileIO{
             return null;
         }else{
             return file;
+        }
+    }
+
+    public static void splitTxt(int sizeOfChunk, String path)
+    {
+        String fileName = path.substring(0, path.lastIndexOf(".") + 1);
+        File file = new File(path);
+        FileInputStream fis = null;
+        BufferedOutputStream bos = null;
+        try {
+            fis = new FileInputStream(file);
+            byte[] buf = new byte[sizeOfChunk * 1024];
+
+            int count = 0;
+            for (int readNum; (readNum = fis.read(buf)) != -1;) {
+                File temp = new File(fileName + count + ".txt");
+                bos = new BufferedOutputStream(new FileOutputStream(temp));
+                bos.write(buf);
+                bos.flush();
+                count++;
+            }
+
+            bos.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }

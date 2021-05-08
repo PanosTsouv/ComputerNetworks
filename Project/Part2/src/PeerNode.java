@@ -128,23 +128,20 @@ public class PeerNode {
     {
         String currentPeerIp = "";
         String currentPeerPort = "";
-        String currentPeerUserName = "";
         String currentPeerDownloads = "";
         String currentPeerFailures = "";
         double doubleCurrentScore = 0;
         ConcurrentHashMap<String, Double> scorePerPeer = new ConcurrentHashMap<>();
-
-        double minScore = Double.MAX_VALUE;
         
         for(String peerInfo : onlinePeersFromDetailsResponse)
         {
             currentPeerIp = peerInfo.split(",")[0];
             currentPeerPort = peerInfo.split(",")[1];
-            currentPeerUserName = peerInfo.split(",")[2];
             currentPeerDownloads = peerInfo.split(",")[3];
             currentPeerFailures = peerInfo.split(",")[4];
             long start = Calendar.getInstance().getTimeInMillis();
             checkActive(currentPeerIp,Integer.parseInt(currentPeerPort));
+            disconnectP2P();
             long end = Calendar.getInstance().getTimeInMillis();
             long time = end - start;
             System.out.println("time : " + time);
@@ -168,6 +165,7 @@ public class PeerNode {
         while(!flag && list.size() > 0)
         {
             flag = receiveFile(list.get(0).getKey().split(",")[0] ,Integer.parseInt(list.get(0).getKey().split(",")[1]), selectedFileName);
+            disconnectP2P();
             notify(flag, list.get(0).getKey());
             list.remove(0);
         }
@@ -265,7 +263,7 @@ public class PeerNode {
                     e.printStackTrace();
                 }
             }
-            if(out != null)
+            if(in != null)
             {
                 try {
                     in.close();
@@ -276,6 +274,38 @@ public class PeerNode {
             }
         }
         System.out.println("Client Part of Peer :: Peer disconnects from tracker successfully");
+    }
+
+    public void disconnectP2P()
+    {
+        if(requestSocketP2P != null)
+        {
+            try {
+                requestSocketP2P.close();
+            } catch (Exception e) {
+                System.out.println("An I/O error occurs when try to close peer connection from another peer's server");
+                e.printStackTrace();
+            }
+            if(outP2P != null)
+            {
+                try {
+                    outP2P.close();
+                } catch (Exception e) {
+                    System.out.println("An I/O error occurs when try to close output stream from another peer's server");
+                    e.printStackTrace();
+                }
+            }
+            if(inP2P != null)
+            {
+                try {
+                    inP2P.close();
+                } catch (Exception e) {
+                    System.out.println("An I/O error occurs when try to close input stream from another peer's server");
+                    e.printStackTrace();
+                }
+            }
+        }
+        System.out.println("Client Part of Peer :: Peer disconnects from another peer's server successfully");
     }
 
     @SuppressWarnings("unchecked")

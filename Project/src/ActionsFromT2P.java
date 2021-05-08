@@ -81,14 +81,68 @@ public class ActionsFromT2P extends Thread{
             {
                 System.out.println("Tracker receive a list request and start handling it.....");
                 detailsHandler(splitRequest);
+            }else if(splitRequest[0].equals("Notify"))
+            {
+                System.out.println("Tracker receive a notify request and start handling it.....");
+                notifyHandler(splitRequest);
             }
         }while(!splitRequest[0].equals("Logout"));
         closeServerConnectionStreams();
     }
 
+    public void notifyHandler(String[] splitRequest)
+    {
+        if(splitRequest[1].equals("Success"))
+        {
+            synchronized(availableFilesWithPeers)
+            {
+                availableFilesWithPeers.get(splitRequest[5]).add(splitRequest[3]);
+                System.out.println("Tracker show availableFilesWithPeers" + availableFilesWithPeers);
+            }
+
+            synchronized(registerUsers)
+            {
+                registerUsers.get(splitRequest[4]).set(1, Integer.toString(Integer.parseInt(registerUsers.get(splitRequest[4]).get(1)) + 1));
+                System.out.println("Tracker show registerUsers" + registerUsers);
+            }
+
+            synchronized(onlineUsers)
+            {
+                for(String onPeer : onlineUsers.keySet())
+                {
+                    if(onlineUsers.get(onPeer).contains(splitRequest[4]))
+                    {
+                        if(onlineUsers.get(onPeer) != null) onlineUsers.get(onPeer).set(3, Integer.toString(Integer.parseInt(onlineUsers.get(onPeer).get(3)) + 1));
+                    }
+                }
+                System.out.println("Tracker show onlineUsers" + onlineUsers);
+            }
+
+        }
+        else{
+            synchronized(registerUsers)
+            {
+                registerUsers.get(splitRequest[2]).set(2, Integer.toString(Integer.parseInt(registerUsers.get(splitRequest[2]).get(2)) + 1));
+                System.out.println("Tracker show registerUsers" + registerUsers);
+            }
+
+            synchronized(onlineUsers)
+            {
+                for(String onPeer : onlineUsers.keySet())
+                {
+                    if(onlineUsers.get(onPeer).contains(splitRequest[2]))
+                    {
+                        if(onlineUsers.get(onPeer) != null) onlineUsers.get(onPeer).set(4, Integer.toString(Integer.parseInt(onlineUsers.get(onPeer).get(4)) + 1));
+                    }
+                }
+                System.out.println("Tracker show onlineUsers" + onlineUsers);
+            }
+        }
+    }
+
     public void closeServerConnectionStreams()
     {
-        if(connectionT2P != null)
+        if(connection != null)
         {
             try {
                 connection.close();
@@ -96,7 +150,7 @@ public class ActionsFromT2P extends Thread{
                 System.out.println("An I/O error occurs when try to close server connection from server part of Tracker");
                 e.printStackTrace();
             }
-            if(outT2P != null)
+            if(out != null)
             {
                 try {
                     out.close();
@@ -105,7 +159,7 @@ public class ActionsFromT2P extends Thread{
                     e.printStackTrace();
                 }
             }
-            if(inT2P != null)
+            if(in != null)
             {
                 try {
                     in.close();
@@ -178,6 +232,17 @@ public class ActionsFromT2P extends Thread{
         String currentPeerPort = "";
 
         String requestFileName = splitRequest[1];
+        if(!availableFiles.contains(requestFileName))
+        {
+            try {
+                out.writeObject("Invalid");
+                System.out.println("Tracker answer that file " + requestFileName + " is not exist to system");
+                return;
+            }
+            catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
         ArrayList<String> tempUsersWithFile = new ArrayList<>();
         ArrayList<String> tempOnlineUsersWithFile = new ArrayList<>();
         synchronized(availableFilesWithPeers)

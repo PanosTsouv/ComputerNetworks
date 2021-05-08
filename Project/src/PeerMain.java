@@ -4,9 +4,9 @@ public class PeerMain {
     public static void main(String[] args) {
 
         Random r = new Random();
-        PeerNode myPeer = new PeerNode(r.nextInt(4000-1000) + 1000, 5000, "192.168.1.5", "", "");
+        PeerNode myPeer = new PeerNode(r.nextInt(4000-1000) + 1000, 5000, "", "", "");
         myPeer.setSharedDirectoryPath(myPeer.askPeerInput("Enter path of shared directory"));
-
+        myPeer.setTrackerIP(myPeer.askPeerInput("Enter the server's IP"));
         new Thread(new Runnable(){
             @Override
             public void run() {
@@ -19,11 +19,12 @@ public class PeerMain {
         boolean registerFlag = false;
         boolean loginFlag = false;
         boolean detailsFlag = false;
+        String choice = "";
         while(true)
         {
             System.out.println("\nStatus: Register -> " + registerFlag + " , Login -> " + loginFlag);
-            String choice = myPeer.askPeerInput
-            ("Press 1 -> Register\nPress 2 -> Login\nPress 3 -> list\nPress 4 -> details\nPress 5 -> checkActive \nPress 6 -> simpleDownload\nPress 7 -> Logout");
+            choice = myPeer.askPeerInput
+            ("Press 1 -> Register\nPress 2 -> Login\nPress 3 -> list\nPress 4 -> details\nPress 5 -> checkActive \nPress 6 -> simpleDownload\nPress 7 -> Logout\nPress 8 -> Exit");
 
             if(choice.equals("1"))
             {
@@ -107,6 +108,10 @@ public class PeerMain {
                 {
                     loginFlag = false;
                 }
+            }
+            else if(choice.equals("8"))
+            {
+                System.exit(0);
             }
         }
     }

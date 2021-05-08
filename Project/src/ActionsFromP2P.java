@@ -55,13 +55,28 @@ public class ActionsFromP2P extends Thread{
             if(FileIO.returnRequestedFile(request, sharedDirectoryPath)!=null){
                 try {
                     byte[] requestFile = Files.readAllBytes(Paths.get(sharedDirectoryPath + "/" + request + ".txt"));
+                    out.writeObject(requestFile.length);
                     out.writeObject(requestFile);
                     System.out.println("Server Part of Peer :: Initialize a stream with this file -> " + request);
                     out.flush();
+                    System.out.println("Server Part of Peer :: Send file successfully -> " + request);
                 } catch (IOException e) {
                     System.out.println("Server Part of Peer :: An I/O error occurs when using the output stream for sending requested file");
                     e.printStackTrace();
                 }
+            }
+            else{
+                System.out.println("Server part of peer:: Given file doesnt exist in directory");
+                try {
+                    out.writeObject(0);
+                    out.flush();
+                    out.writeObject(new byte[0]);
+                    out.flush();
+                } catch (IOException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+                //TODO
             }
         }
         closeConnectionStreams();

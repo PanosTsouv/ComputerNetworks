@@ -67,6 +67,7 @@ public class FileIO{
             }
 
             bos.close();
+            fis.close();
         } catch (IOException e) {
             e.printStackTrace();
         }

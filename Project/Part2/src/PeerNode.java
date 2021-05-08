@@ -20,6 +20,7 @@ import java.io.BufferedReader;
 
 
 public class PeerNode {
+    private final int CHUNK_SIZE = 512;
     private int peerServerPort = 0;
     private String trackerIP = "";
     private int trackerPort = 0;
@@ -459,6 +460,13 @@ public class PeerNode {
         } catch (IOException e) {
             System.out.println("An I/O error occurs when using the output stream for sending information");
             e.printStackTrace();
+        }
+    }
+
+    public void partition(){
+        String[] slitPeerFiles = FileIO.readPeerFiles(sharedDirectoryPath).split(",");
+        for(String file : slitPeerFiles){
+            FileIO.splitTxt(CHUNK_SIZE, sharedDirectoryPath + "/" + file + ".txt");
         }
     }
     

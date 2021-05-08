@@ -14,7 +14,8 @@ public class PeerMain {
             }
         }).start();
         
-        FileIO.readListFile();
+        /*--------RUN PARTITION METHOD WHEN PEER STARTS THE PROGRAM FOR ALL FILES LISTED IN PEER'S shared_directory-----*/
+        myPeer.partition();
 
         boolean registerFlag = false;
         boolean loginFlag = false;

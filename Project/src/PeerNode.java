@@ -2,6 +2,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.UnknownHostException;
@@ -9,8 +10,13 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.io.Console;
+import java.io.BufferedReader;
 
 
 public class PeerNode {
@@ -124,8 +130,11 @@ public class PeerNode {
         String currentPeerPort = "";
         String currentPeerUserName = "";
         String currentPeerDownloads = "";
-        String currentPeerFialures = "";
+        String currentPeerFailures = "";
+        double doubleCurrentScore = 0;
         ConcurrentHashMap<String, Double> scorePerPeer = new ConcurrentHashMap<>();
+
+        double minScore = Double.MAX_VALUE;
         
         for(String peerInfo : onlinePeersFromDetailsResponse)
         {
@@ -133,24 +142,75 @@ public class PeerNode {
             currentPeerPort = peerInfo.split(",")[1];
             currentPeerUserName = peerInfo.split(",")[2];
             currentPeerDownloads = peerInfo.split(",")[3];
-            currentPeerFialures = peerInfo.split(",")[4];
+            currentPeerFailures = peerInfo.split(",")[4];
             long start = Calendar.getInstance().getTimeInMillis();
             checkActive(currentPeerIp,Integer.parseInt(currentPeerPort));
             long end = Calendar.getInstance().getTimeInMillis();
             long time = end - start;
             System.out.println("time : " + time);
-            scorePerPeer.put(currentPeerUserName, time * Math.pow(0.9, Double.parseDouble(currentPeerDownloads)) * Math.pow(1.2, Double.parseDouble(currentPeerFialures)));
+            doubleCurrentScore = time * Math.pow(0.9, Double.parseDouble(currentPeerDownloads)) * Math.pow(1.2, Double.parseDouble(currentPeerFailures));
+            scorePerPeer.put(peerInfo, doubleCurrentScore);
         }
+        List<Map.Entry<String, Double> > list = new LinkedList<Map.Entry<String, Double> >(scorePerPeer.entrySet());
+  
+        // Sort the list
+        Collections.sort(list, new Comparator<Map.Entry<String, Double> >() {
+            public int compare(Map.Entry<String, Double> o1, 
+                               Map.Entry<String, Double> o2)
+            {
+                return (o1.getValue()).compareTo(o2.getValue());
+            }
+        });
         System.out.println(scorePerPeer);
+        System.out.println(list);
+        boolean flag = false;
 
+        while(!flag && list.size() > 0)
+        {
+            flag = receiveFile(list.get(0).getKey().split(",")[0] ,Integer.parseInt(list.get(0).getKey().split(",")[1]), selectedFileName);
+            notify(flag, list.get(0).getKey());
+            list.remove(0);
+        }
 
-        receiveFile(currentPeerIp ,Integer.parseInt(currentPeerPort), selectedFileName);
+        if(!flag)
+        {
+            System.out.println("File " + selectedFileName + " could not be downloaded");
+        }
     }
 
-    public void receiveFile(String peerIP, int peerPort,String file)
+    private void notify(boolean isFileDownloaded, String peerInfoSourceOfFile)
+    {
+        if(isFileDownloaded)
+        {
+            try {
+                out.writeObject("Notify,Success," + userName + "," + tokenId + "," + peerInfoSourceOfFile.split(",")[2] + "," + selectedFileName);
+                System.out.println("Client Part of Peer :: Initialize an output stream with 'successful download' message");
+                out.flush();
+                System.out.println("Client Part of Peer :: Send a 'successful download' message to Tracker");
+            } catch (IOException e) {
+            System.out.println("Client Part of Peer :: An I/O error occurs when peer tries to send a 'successful download' message to Tracker");
+                e.printStackTrace();
+            }
+        }
+        else
+        {
+            try {
+                out.writeObject("Notify,Fail," + peerInfoSourceOfFile.split(",")[2]);
+                System.out.println("Client Part of Peer :: Initialize an output stream with 'invalid download' message");
+                out.flush();
+                System.out.println("Client Part of Peer :: Send a 'invalid download' message");
+            } catch (IOException e) {
+            System.out.println("Client Part of Peer :: An I/O error occurs when peer tries to send a 'invalid download' message to Tracker");
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public boolean receiveFile(String peerIP, int peerPort,String file)
     {
         connectP2P(peerIP, peerPort);
         byte[] answerFromAnotherPeer = null;
+        int length = 0;
         try {
             outP2P.writeObject(file);
             System.out.println("Client Part of Peer :: Initialize a stream with this file request");
@@ -158,15 +218,32 @@ public class PeerNode {
             System.out.println("Client Part of Peer :: Send an file request");
         } catch (IOException e) {
             System.out.println("An I/O error occurs when peer use output stream to request file for download");
-            e.printStackTrace();    
+            e.printStackTrace();  
+            return false;  
         }
         try {
+            length = (int)inP2P.readObject();
             answerFromAnotherPeer = (byte[])inP2P.readObject();
-            Files.write(Paths.get(sharedDirectoryPath + "/" + file + ".txt"), answerFromAnotherPeer);
+            if(length == answerFromAnotherPeer.length && length != 0){
+                Files.write(Paths.get(sharedDirectoryPath + "/" + file + ".txt"), answerFromAnotherPeer);
+                System.out.println("Client Part of Peer :: Receive the file " + file + " successfully with length " + answerFromAnotherPeer.length + " of " + length);
+                return true;
+            }
+            else if(length != answerFromAnotherPeer.length)
+            {
+                System.out.println("Client Part of Peer :: Valid length of file " + file + " is " + length + "but client peer receive " + answerFromAnotherPeer.length + ".Download failed");
+                return false;
+            }else if(length == 0)
+            {
+                System.out.println("Client Part of Peer :: File was empty.Download failed");
+                return false;
+            }
         } catch (IOException | ClassNotFoundException e){
-            System.out.println("Client Part of Peer :: An I/O error occurs when using the input stream for receiving requested file");
+            System.out.println("Client Part of Peer :: An I/O|ClassNotFoundException error occurs when using the input stream for receiving requested file");
             e.printStackTrace();
+            return false;
         }
+        return false;
     }
 
     public void disconnect()
@@ -231,7 +308,7 @@ public class PeerNode {
 
         try {
             
-            System.out.println("Client Part of Peer :: Receive answer from server for " + mode + " request");
+            System.out.println("Client Part of Peer ::Waiting to receive answer from server for " + mode + " request");
             if(mode.equals("Register"))
             {
                 answerMessage = (String)in.readObject();
@@ -322,7 +399,12 @@ public class PeerNode {
         }
     }
     public boolean handleDetailsResponse(String answerMessage){
-        if(answerMessage.equals("Fail"))
+        if(answerMessage.equals("Invalid"))
+        {
+            System.out.println("Client Part of Peer :: Receive answer from server and the request file does not exist to system");
+            return false;
+        }
+        else if(answerMessage.equals("Fail"))
         {
             System.out.println("Client Part of Peer :: Receive answer from server and there is no peer connected with this file");
             return false;
@@ -338,7 +420,7 @@ public class PeerNode {
     }
 
     public void inform(){
-        String inform = "192.168.1.5" + "," + peerServerPort + "," + FileIO.readPeerFiles(this.sharedDirectoryPath);
+        String inform = getTrackerIP() + "," + peerServerPort + "," + FileIO.readPeerFiles(this.sharedDirectoryPath);
         try {
             out.writeObject(inform);
             System.out.println("Client Part of Peer :: Initialize a stream with this information -> " + inform);
@@ -352,10 +434,17 @@ public class PeerNode {
     
     public String askPeerInput(String screenMessage)
     {
-        Console console = System.console();
         System.out.println(screenMessage);
-
-        String temp = console.readLine();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+ 
+        // Reading data using readLine
+        String temp = "";
+        try {
+            temp = reader.readLine();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
         System.out.println("Application receive peer's input '" + temp + "'");
         return temp;
     }
@@ -433,6 +522,7 @@ public class PeerNode {
     public void setSelectedFileName(String selectedFileName){ 
         if(FileIO.readPeerFiles(sharedDirectoryPath).contains(selectedFileName)){
             System.out.println("This file is already in your directory");
+            setSelectedFileName(askPeerInput("Select a file"));
         }else{
             this.selectedFileName = selectedFileName;
         }
@@ -446,5 +536,10 @@ public class PeerNode {
     public void setSharedDirectoryPath(String sharedDirectoryPath)
     {
         this.sharedDirectoryPath = sharedDirectoryPath;
+    }
+
+    public void setTrackerIP(String trackerIP)
+    {
+        this.trackerIP = trackerIP;
     }
 }

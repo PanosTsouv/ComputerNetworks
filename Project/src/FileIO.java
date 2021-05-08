@@ -36,8 +36,7 @@ public class FileIO{
 
     public static File returnRequestedFile(String filename, String sharedDirectoryPath){
         File file = new File(sharedDirectoryPath + "/" + filename + ".txt");
-        if(!file.exists()) { 
-            System.out.println("Server part of peer:: Given file doesnt exist in directory");
+        if(!file.exists()) {
             return null;
         }else{
             return file;

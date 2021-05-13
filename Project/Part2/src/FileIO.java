@@ -12,12 +12,18 @@ public class FileIO{
         File folder = new File(sharedDirectoryPath);
         File[] listOfFiles = folder.listFiles();
         String fileNames = "";
-        for (File file : listOfFiles) {
-            if (file.isFile()) {
-                fileNames = fileNames + file.getName().replace(".txt","") + ",";
+        if(listOfFiles != null)
+        {
+            for (File file : listOfFiles) {
+                if (file.isFile()) {
+                    fileNames = fileNames + file.getName().replace(".txt","") + ",";
+                }
             }
         }
-        fileNames = fileNames.substring(0,fileNames.length() - 1);
+        if(!fileNames.equals("")) 
+        {
+            fileNames = fileNames.substring(0,fileNames.length() - 1);
+        }
         return fileNames;
     }
 
@@ -49,17 +55,18 @@ public class FileIO{
 
     public static void splitTxt(int sizeOfChunk, String path)
     {
-        String fileName = path.substring(0, path.lastIndexOf(".") + 1);
+        String fileName = path.substring(0, path.lastIndexOf("."));
         File file = new File(path);
         FileInputStream fis = null;
         BufferedOutputStream bos = null;
         try {
+            if(!file.exists()) return;
             fis = new FileInputStream(file);
             byte[] buf = new byte[sizeOfChunk * 1024];
 
             int count = 0;
             for (int readNum; (readNum = fis.read(buf)) != -1;) {
-                File temp = new File(fileName + count + ".txt");
+                File temp = new File(fileName + "_" + count + ".txt");
                 bos = new BufferedOutputStream(new FileOutputStream(temp));
                 bos.write(buf);
                 bos.flush();

@@ -21,6 +21,7 @@ import java.io.BufferedReader;
 
 public class PeerNode {
     private final int CHUNK_SIZE = 512;
+    private boolean hasLoginAgain = false;
     private int peerServerPort = 0;
     private String trackerIP = "";
     private int trackerPort = 0;
@@ -403,7 +404,14 @@ public class PeerNode {
         {
             System.out.println("Client Part of Peer :: Receive a token id from server -> " + answerMessage);
             tokenId = answerMessage;
-            inform();
+            if(!FileIO.readPeerFiles(sharedDirectoryPath).equals("") && !hasLoginAgain){
+                seederInform();
+            }
+            else
+            {
+                inform("inform");
+            }
+            hasLoginAgain = true;
             return true;
         }
     }
@@ -450,8 +458,15 @@ public class PeerNode {
         }
     }
 
-    public void inform(){
-        String inform = getTrackerIP() + "," + peerServerPort + "," + FileIO.readPeerFiles(this.sharedDirectoryPath);
+    public void inform(String type){
+        String inform = "";
+        if(type.equals("seeder"))
+            inform = type + "," + Boolean.toString(hasLoginAgain) + "," + getTrackerIP() + "," + peerServerPort 
+            + "," + FileIO.readPeerFiles(this.sharedDirectoryPath);
+        else{
+            inform = type + "," + Boolean.toString(hasLoginAgain) + "," + getTrackerIP() + "," + peerServerPort 
+            + "," + FileIO.readPeerFiles(this.sharedDirectoryPath);
+        }
         try {
             out.writeObject(inform);
             System.out.println("Client Part of Peer :: Initialize a stream with this information -> " + inform);
@@ -461,6 +476,10 @@ public class PeerNode {
             System.out.println("An I/O error occurs when using the output stream for sending information");
             e.printStackTrace();
         }
+    }
+
+    public void seederInform(){
+        inform("seeder");
     }
 
     public void partition(){

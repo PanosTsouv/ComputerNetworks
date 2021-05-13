@@ -79,7 +79,7 @@ public class ActionsFromT2P extends Thread{
                 listHandler();
             }else if(splitRequest[0].equals("Details"))
             {
-                System.out.println("Tracker receive a list request and start handling it.....");
+                System.out.println("Tracker receive a details request and start handling it.....");
                 detailsHandler(splitRequest);
             }else if(splitRequest[0].equals("Notify"))
             {
@@ -313,7 +313,8 @@ public class ActionsFromT2P extends Thread{
         synchronized(onlineUsers)
         {
             for(String peer: tempOnlineUsersWithFile){
-                detailsAnswer += onlineUsers.get(peer).get(0) + "," + onlineUsers.get(peer).get(1) + "," + onlineUsers.get(peer).get(2) + "," + onlineUsers.get(peer).get(3) + "," + onlineUsers.get(peer).get(4) + "/";
+                detailsAnswer += onlineUsers.get(peer).get(0) + "," + onlineUsers.get(peer).get(1) + "," + onlineUsers.get(peer).get(2) 
+                + "," + onlineUsers.get(peer).get(3) + "," + onlineUsers.get(peer).get(4) + /* TODO */"/";
             }
         }
         try {
@@ -326,7 +327,8 @@ public class ActionsFromT2P extends Thread{
             {
                 detailsAnswer = detailsAnswer.substring(0,detailsAnswer.length() - 1);
                 out.writeObject(detailsAnswer);
-                System.out.println("Tracker answer that there are online peers with file " + requestFileName + " and send their information " + detailsAnswer);
+                System.out.println("Tracker answer that there are online peers with file " + requestFileName 
+                + " and send their information " + detailsAnswer);
             }
         } catch (IOException e) {
             
@@ -382,12 +384,15 @@ public class ActionsFromT2P extends Thread{
             registerUserInfo.add(userPass);
             registerUserInfo.add("0");
             registerUserInfo.add("0");
+            registerUserInfo.add("");
+            registerUserInfo.add("");
             System.out.println("Tracker create a list with peer's info");
 
             synchronized(registerUsers)
             {
                 registerUsers.put(userName, registerUserInfo);
                 System.out.println("Tracker add peer " + userName + "=" + registerUsers.get(userName) + " to register list");
+                System.out.println(registerUsers);
             }
         }
     }
@@ -396,11 +401,9 @@ public class ActionsFromT2P extends Thread{
     {
         String userName = splitRequest[1];
         String userPass = splitRequest[2];
+        String userPasswordInRegisterList = "";
         String countDownloads = "";
         String countFailures = "";
-        String userPasswordInRegisterList = "";
-        String peerIp = "";
-        String peerPort = "";
         ArrayList<String> userInfo;
 
         synchronized(registerUsers)
@@ -433,12 +436,48 @@ public class ActionsFromT2P extends Thread{
             System.out.println("An I/O error occurs while tracker tries to send tokenID for login request");
             e.printStackTrace();
         }
+
+        informRequest(userName, countDownloads, countFailures, tokenId);
+    }
+
+    private void informRequest(String userName, String countDownloads, String countFailures, int tokenId)
+    {
         String userInform = "";
+        String peerIp = "";
+        String peerPort = "";
         try {
             userInform = (String)in.readObject();
-            peerIp = userInform.split(",")[0];
-            peerPort = userInform.split(",")[1];
+            peerIp = userInform.split(",")[2];
+            peerPort = userInform.split(",")[3];
             System.out.println("Tracker receive Ip-Port from peer " + userName);
+
+            String[] userInformArray = userInform.split(",");
+            String allFilesAsString = userInform.replace(userInformArray[0] + "," + userInformArray[1] + "," + userInformArray[2] + "," + userInformArray[3] + ",", "");
+            System.out.println(allFilesAsString);
+            String files = "";
+            for(String file : availableFiles){
+                if(allFilesAsString.contains(file))
+                {
+                    files += file + ",";
+                    allFilesAsString = allFilesAsString.replace(file + ",", "");
+                }
+            }
+            if(!files.equals(""))
+            {
+                files.subSequence(0, files.length()-1);
+            }
+
+            if(userInform.split(",")[0].equals("inform"))
+            {
+                userInform = userInformArray[0] + "," + userInformArray[1] + "," + userInformArray[2] + "," + userInformArray[3] + "," + files;
+                informHandler(peerIp, peerPort, userName, countDownloads, countFailures, userInform, tokenId);
+            }
+            else
+            {
+                String userinformWithFiles = userInform;
+                userInform = userInformArray[0] + "," + userInformArray[1] + "," + userInformArray[2] + "," + userInformArray[3] + "," + allFilesAsString.replace(",", "/");
+                seederInformHandler(peerIp, peerPort, userName, countDownloads, countFailures, userInform, tokenId, userinformWithFiles);
+            }
         } catch (ClassNotFoundException e) {
             System.out.println("A ClassNotFoundException error occurs while tracker tries to receive Ip-Port from peer " + userName);
             e.printStackTrace();
@@ -446,15 +485,24 @@ public class ActionsFromT2P extends Thread{
             System.out.println("An I/O error occurs while tracker tries to receive Ip-Port from peer " + userName);
             e.printStackTrace();
         }
+    }
 
-        updateOnlineUserList(peerIp, peerPort, userName, countDownloads, countFailures, Integer.toString(tokenId));
+    private void informHandler(String peerIp, String peerPort, String userName, String countDownloads, String countFailures, String userInform, int tokenId)
+    {
+        updateOnlineUserList(peerIp, peerPort, userName, countDownloads, countFailures, Integer.toString(tokenId),userInform.split(","));
         updateFileLists(userInform.split(","), Integer.toString(tokenId));
+    }
+
+    private void seederInformHandler(String peerIp, String peerPort, String userName, String countDownloads, String countFailures, String userInform, int tokenId, String userinformWithFiles)
+    {
+        updateOnlineUserList(peerIp, peerPort, userName, countDownloads, countFailures, Integer.toString(tokenId),userInform.split(","));
+        updateFileLists(userinformWithFiles.split(","), Integer.toString(tokenId));
     }
 
     private void updateFileLists(String[] splitRequest, String tokenId)
     {
         Boolean fileExists = false;
-        for(int i = 2; i < splitRequest.length; i++)
+        for(int i = 4; i < splitRequest.length; i++)
         {
             synchronized(availableFiles)
             {
@@ -472,11 +520,7 @@ public class ActionsFromT2P extends Thread{
                     }
                     else
                     {
-                        ArrayList<String> temp = availableFilesWithPeers.get(splitRequest[i]);
-                        synchronized(temp)
-                        {
-                            temp.add(tokenId);
-                        }
+                        availableFilesWithPeers.get(splitRequest[i]).add(tokenId);
                     }
                 }
             }
@@ -519,7 +563,7 @@ public class ActionsFromT2P extends Thread{
         return true;
     }
 
-    public void updateOnlineUserList(String peerIp, String peerPort, String userName, String countDownloads, String countFailures, String tokenId)
+    public void updateOnlineUserList(String peerIp, String peerPort, String userName, String countDownloads, String countFailures, String tokenId, String[] userInform)
     {
         ArrayList<String> onlineUserInfo = new ArrayList<>();
         onlineUserInfo.add(peerIp);
@@ -527,6 +571,44 @@ public class ActionsFromT2P extends Thread{
         onlineUserInfo.add(userName);
         onlineUserInfo.add(countDownloads);
         onlineUserInfo.add(countFailures);
+
+        if(userInform[1].equals("true"))
+        {
+            synchronized(registerUsers)
+            {
+                onlineUserInfo.add(5, registerUsers.get(userName).get(3));
+                onlineUserInfo.add(6, registerUsers.get(userName).get(4));
+            }
+        }
+        else{
+            if(userInform[0].equals("inform"))
+            {
+                onlineUserInfo.add("");
+                onlineUserInfo.add("");
+            }
+            else
+            {
+                String fileName = "";
+                String[] tempParts = userInform[4].split("/");
+                String seederBit = "";
+                for(String part : tempParts)
+                {
+                    if(part.substring(part.length() - 1, part.length()).equals("0"))
+                    {
+                        fileName = part.substring(0, part.length() - 2);
+                        seederBit += fileName + "=1,";
+                    }
+                }
+                onlineUserInfo.add(userInform[4]);
+                onlineUserInfo.add(seederBit.substring(0, seederBit.length() - 1));
+
+                synchronized(registerUsers)
+                {
+                    registerUsers.get(userName).set(3, userInform[4]);
+                    registerUsers.get(userName).set(4, seederBit.substring(0, seederBit.length() - 1));
+                }
+            }
+        }
 
         System.out.println("Tracker create a list with online peer's info");
 
